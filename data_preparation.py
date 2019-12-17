@@ -52,13 +52,6 @@ def get_default_parameters(data_path, class_indices):
     }
     return parms
 
-
-def get_data(parms):
-    # each time we change the data classes
-    dand_l = _extract__images_from_folders(parms['Data'])
-    pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
-    return  pickle.dump(dand_l, open(pickle_file_name, "wb"))
-
 def _class_is_input(some_class, path_to_data):
     for i in data_details["class_indices"]:
         if i == os.listdir(path_to_data).index(some_class) + 1:
@@ -80,6 +73,12 @@ def _extract__images_from_folders(data_details):
                 fixed_data["Lables"].append(class_name)
                 counter = counter + 1
     return fixed_data
+
+def get_data(parms):
+    # each time we change the data classes
+    dand_l = _extract__images_from_folders(parms['Data'])
+    pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
+    return  pickle.dump(dand_l, open(pickle_file_name, "wb"))
 
 
 def train_split_data(data, lables, split):
