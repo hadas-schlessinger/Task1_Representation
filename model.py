@@ -12,7 +12,7 @@ def _tuning():
 
 def train_with_tuning(train_data_rep, split_data, params):
     _tuning()
-    _train()
+    _train(train_data_rep, split_data, params)
     pass
 
 
@@ -25,7 +25,6 @@ def evaluate(results,split_data, params):
     # Most important: the error rate In our case also:
     # Confusion matrix, the indices of the largest error images
     pass
-
 
 
 def report_results(summary, params):
