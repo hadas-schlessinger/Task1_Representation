@@ -27,7 +27,7 @@ def get_default_parameters(data_path, class_indices):
                 "ClassIndices": class_indices,
                 "MaxNumOfImages": 40,
                 "ResultsPath": os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
-                "ResultsFileName": 'ResultsOfEx1.pkl'
+                "ResultsFileName": 'Results.pkl'
             },
         "Prepare":
             {
@@ -44,11 +44,11 @@ def get_default_parameters(data_path, class_indices):
             "DefaultSplit": 20,
             "ForTuneSplit": 10
         },
-        "Cache":
+        "Pickle":
             {
-                "CachePath": os.path.join(os.getcwd(), 'Task1_Representation', 'Cache'),
-                "CacheFileName": '1.pkl',
-                "UseCacheFlagForXX": False
+                "PicklePath": os.path.join(os.getcwd(), 'Task1_Representation', 'Cache'),
+                "PickleFileName": '1.pkl',
+                "IsFirstTime": False
             }
     }
     return parms
@@ -80,7 +80,7 @@ def prepare(train_data, parms):
 
 def _load_data(path):
     os.listdir(path)
-    pass
+    return
 
 
 def _save_pickle(data):
