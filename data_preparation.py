@@ -12,12 +12,11 @@ def get_default_parameters():
     pass
 
 
-def get_data(parameters):
+def get_data(path):
     # Loads the data and subsets it if required
     # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’],
     # In our case: Params include a path for the data and sub - setting parameters
 
-    data = 2
     pass
 
 
@@ -27,5 +26,7 @@ def train_split_data(TrainData, TestData, TrainLabels, TestLabels):
     pass
 
 
-def preper():
+def prepare():
     pass
+
+
