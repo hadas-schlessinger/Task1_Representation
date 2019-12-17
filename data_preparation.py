@@ -4,6 +4,7 @@ import pickle
 
 
 def get_default_parameters():
+
     # Returns a dict containing the default experiment parameters
     # It has several fields, each itself a dict of parameters for the various experiment stages
     # These are ‘Split’, ‘Prepare’, ‘Train’, ‘Summary’, ‘Report’ (according to the needs)

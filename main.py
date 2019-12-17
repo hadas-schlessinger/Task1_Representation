@@ -5,10 +5,10 @@ import model
 
 
 def main():
-    data_path = ''
+    data_path = os.path.join(os.getcwd(), 'Task1_Representation', '101_ObjectCategories')
     class_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     class_tuning = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    params = dp.get_default_parameters()   # (experiment specific parameters override)
+    params = dp.get_default_parameters(data_path)   # (experiment specific parameters override)
     np.random.seed(0)  # Seed
     dand_l = dp.get_data(params['Data'])
     split_data = dp.train_split_data(dand_l['Data'], dand_l['Labels'], params['Split'])
