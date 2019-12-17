@@ -46,25 +46,40 @@ def get_default_parameters(data_path, class_indices):
         },
         "Pickle":
             {
-                "PicklePath": os.path.join(os.getcwd(), 'Task1_Representation', 'Cache'),
-                "PickleFileName": '1.pkl',
-                "IsFirstTime": False
+                "PicklePath": os.path.join(os.getcwd(), 'Task1_Representation', 'Pickle'),
+                "PickleFileName": 'data.pkl',
             }
     }
     return parms
 
 
-def get_data(path_to_data):
-    data = _load_data(path_to_data)
-    cv2.imread()
-    cv2.rgb2gray()
-    cv2.imresize()
-    _save_pickle(data)
-    # Loads the data and subsets it if required
-    # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’],
-    # In our case: Params include a path for the data and sub - setting parameters
+def get_data(parms):
+    # each time we change the data classes
+    dand_l = _extract__images_from_folders(parms['Data'])
+    pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
+    return  pickle.dump(dand_l, open(pickle_file_name, "wb"))
 
-    pass
+def _class_is_input(some_class, path_to_data):
+    for i in data_details["class_indices"]:
+        if i == os.listdir(path_to_data).index(some_class) + 1:
+            return true
+    return false
+
+def _extract__images_from_folders(data_details):
+    # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’]
+    fixed_data = {
+        "Data": [],
+        "Lables": []
+    }
+    for class_name in os.listdir(data_details['data_path']):
+        if  _class_is_input(class_name,data_details['data_path']):
+            counter = 0
+            for file in os.listdir(os.path.join(data_details['data_path'], folder)) and counter < data_details["MaxNumOfImages"]:
+                image = cv2.imread(os.path.join(data_details['data_path'], class_name, file))
+                fixed_data["Data"].append(image)
+                fixed_data["Lables"].append(class_name)
+                counter = counter + 1
+    return fixed_data
 
 
 def train_split_data(data, lables, split):
@@ -77,11 +92,7 @@ def prepare(train_data, parms):
     # Compute the representation function: Turn the images into vectors for classification
     pass
 
-
-def _load_data(path):
-    os.listdir(path)
-    return
+def load_data(pickle_file_name):
+    return pickle.load(open(pickle_file_name, "rb"))
 
 
-def _save_pickle(data):
-    pass
