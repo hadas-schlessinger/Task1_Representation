@@ -5,9 +5,6 @@ import numpy as np
 import skimage.feature
 import skimage.color
 import sklearn
-import sklearn.svm
-import sklearn.multiclass
-import sklearn.preprocessing
 from matplotlib import pyplot as plt
 
 
@@ -46,7 +43,7 @@ def get_default_parameters(data_path, class_indices):
         },
         "Pickle":
             {
-                "PicklePath": os.path.join(os.getcwd(), 'Task1_Representation', 'Pickle'),
+                "PicklePath": os.path.join(os.getcwd(), 'Pickle'),
                 "PickleFileName": 'data.pkl',
             }
     }
@@ -56,19 +53,23 @@ def get_default_parameters(data_path, class_indices):
 def _extract__images_from_folders(data_details):
     # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’]
     fixed_data = {
-        "Data": [],
-        "Lables": []
+        'Data': [],
+        'Labels': []
     }
-    class_indices = data_details['class_indices']
+    class_indices = data_details['ClassIndices']
     for class_number in class_indices:
-        class_name = os.listdir(data_details['data_path'])[class_number+1]
-        print(class_name)
+        class_name = os.listdir(data_details['DataPath'])[class_number]
+        list = sorted(os.listdir(data_details['DataPath']))
+        print(list)
+        print(len(os.listdir(data_details['DataPath'])))
+        # print(class_name)
+        # print(os.listdir(os.path.join(data_details['DataPath'], class_name)))
         counter = 0
-        for file in os.listdir(os.path.join(data_details['data_path'], class_name)) and counter < data_details["MaxNumOfImages"]:
-            if file.endswith(".jpg"):
-                image = cv2.imread(os.path.join(data_details['data_path'], class_name, file))
-                fixed_data["Data"].append(image)
-                fixed_data["Lables"].append(class_name)
+        for file in os.listdir(os.path.join(data_details['DataPath'], class_name)):
+            if file.endswith('.jpg') and counter < data_details['MaxNumOfImages']:
+                image = cv2.imread(os.path.join(data_details['DataPath'], class_name, file))
+                fixed_data['Data'].append(image)
+                fixed_data['Labels'].append(class_name)
                 counter = counter + 1
     return fixed_data
 
@@ -77,6 +78,7 @@ def get_data(parms):
     # each time we change the data classes
     dand_l = _extract__images_from_folders(parms['Data'])
     pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
+    print(pickle_file_name)
     return pickle.dump(dand_l, open(pickle_file_name, "wb"))
 
 

@@ -5,12 +5,12 @@ import model
 
 
 def main():
-    data_path = os.path.join(os.getcwd(), 'Task1_Representation', '101_ObjectCategories')
+    data_path = os.path.join(os.getcwd(), '101_ObjectCategories')
     class_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     class_tuning = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     params = dp.get_default_parameters(data_path, class_indices)   # (experiment specific parameters override)
     np.random.seed(0)  # Seed
-    dand_l = dp.get_data(params['Data'])
+    dand_l = dp.get_data(params)
     # split_data = dp.train_split_data(dand_l['Data'], dand_l['Labels'], params['Split'])
     # # returns train data, test data, train labels and test labels
     # train_data_rep = dp.prepare(split_data['Train']['Data'], params['Prepare'])
