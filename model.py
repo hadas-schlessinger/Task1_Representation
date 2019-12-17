@@ -27,8 +27,8 @@ def evaluate(results,split_data, params):
     pass
 
 
-
 def report_results(summary, params):
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
     pass
+
