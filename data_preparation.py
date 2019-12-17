@@ -1,6 +1,5 @@
 
 def get_default_parameters():
-
     # Returns a dict containing the default experiment parameters
     # It has several fields, each itself a dict of parameters for the various experiment stages
     # These are ‘Split’, ‘Prepare’, ‘Train’, ‘Summary’, ‘Report’ (according to the needs)
@@ -12,7 +11,7 @@ def get_default_parameters():
     pass
 
 
-def get_data(path):
+def get_data(path_to_data):
     # Loads the data and subsets it if required
     # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’],
     # In our case: Params include a path for the data and sub - setting parameters
@@ -20,13 +19,14 @@ def get_data(path):
     pass
 
 
-def train_split_data(TrainData, TestData, TrainLabels, TestLabels):
+def train_split_data(data, lables, split):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
     pass
 
 
-def prepare():
+def prepare(train_data, parms):
+    # Compute the representation function: Turn the images into vectors for classification
     pass
 
 
