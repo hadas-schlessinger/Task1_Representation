@@ -10,6 +10,7 @@ import sklearn.multiclass
 import sklearn.preprocessing
 from matplotlib import pyplot as plt
 
+
 def train(train_data_rep, split_data, params, class_indices, tuning_parameters):
     # the functions implementing the actual learning algorithm and the classifier
     _hog()
