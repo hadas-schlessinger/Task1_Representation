@@ -1,18 +1,17 @@
+import sklearn
 
-def _train(train_data_rep, split_data, params):
+def train(train_data_rep, split_data, params, class_indices, tuning_parameters):
     # the functions implementing the actual learning algorithm and the classifier
-    pass
+    _hog()
+    m_classes_svm = _m_classes_svm_train(class_indices)
+    results = _m_classes_predict(m_classes_svm)
+    return results
 
 
-def _tuning():
+def tuning(class_tuning, class_indices):
     # If hyper parameter tuning is required, replace the call to train() in main,
     # with a call to TrainWithTuning() which internally also does the hyper parameter tuning (see slides 11-14)
-    pass
-
-
-def train_with_tuning(train_data_rep, split_data, params):
-    _tuning()
-    _train(train_data_rep, split_data, params)
+    # do on class 1-10
     pass
 
 
@@ -28,6 +27,25 @@ def evaluate(results,split_data, params):
 
 
 def report_results(summary, params):
+    # print the error results and confusion matrix and error images
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
     pass
+
+
+def _hog():
+    pass
+
+
+def _m_classes_svm_train():
+    _svm()
+    pass
+
+
+def _m_classes_predict(m_classes_svm):
+    pass
+
+
+def _svm():
+    pass
+

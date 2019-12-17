@@ -1,3 +1,7 @@
+import os
+import cv2
+import pickle
+
 
 def get_default_parameters():
     # Returns a dict containing the default experiment parameters
@@ -12,6 +16,11 @@ def get_default_parameters():
 
 
 def get_data(path_to_data):
+    data = _load_data(path_to_data)
+    cv2.imread()
+    cv2.rgb2gray()
+    cv2.imresize()
+    _save_pickle(data)
     # Loads the data and subsets it if required
     # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’],
     # In our case: Params include a path for the data and sub - setting parameters
@@ -30,3 +39,10 @@ def prepare(train_data, parms):
     pass
 
 
+def _load_data(path):
+    os.listdir(path)
+    pass
+
+
+def _save_pickle(data):
+    pass

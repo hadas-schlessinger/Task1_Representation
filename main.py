@@ -5,13 +5,17 @@ import model
 
 
 def main():
+    data_path = ''
+    class_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    class_tuning = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     params = dp.get_default_parameters()   # (experiment specific parameters override)
     np.random.seed(0)  # Seed
     dand_l = dp.get_data(params['Data'])
     split_data = dp.train_split_data(dand_l['Data'], dand_l['Labels'], params['Split'])
     # returns train data, test data, train labels and test labels
     train_data_rep = dp.prepare(split_data['Train']['Data'], params['Prepare'])
-    train_model = model.train_with_tuning(train_data_rep, split_data['Train']['Labels'], params['Train'])
+    tuning_parameters = model.tuning(class_tuning)
+    train_model = model.train(train_data_rep, split_data['Train']['Labels'], params['Train'], class_indices, tuning_parameters)
     test_data_rep = dp.prepare(split_data['Test']['Data'], params['Preapare'])
     results = model.test(train_model, test_data_rep)
     summary = model.evaluate(results, split_data['Test']['Labels'], params['Summary'])
