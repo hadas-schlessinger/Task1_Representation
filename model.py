@@ -1,4 +1,14 @@
+import os
+import cv2
+import pickle
+import numpy as np
+import skimage.feature
+import skimage.color
 import sklearn
+import sklearn.svm
+import sklearn.multiclass
+import sklearn.preprocessing
+from matplotlib import pyplot as plt
 
 def train(train_data_rep, split_data, params, class_indices, tuning_parameters):
     # the functions implementing the actual learning algorithm and the classifier

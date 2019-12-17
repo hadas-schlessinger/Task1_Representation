@@ -1,19 +1,57 @@
 import os
 import cv2
 import pickle
+import numpy as np
+import skimage.feature
+import skimage.color
+import sklearn
+import sklearn.svm
+import sklearn.multiclass
+import sklearn.preprocessing
+from matplotlib import pyplot as plt
 
-
-def get_default_parameters():
+def get_default_parameters(data_path, class_indices):
 
     # Returns a dict containing the default experiment parameters
     # It has several fields, each itself a dict of parameters for the various experiment stages
     # These are ‘Split’, ‘Prepare’, ‘Train’, ‘Summary’, ‘Report’ (according to the needs)
     # Each struct is sent to the relevant function (i.e. Params[‘Train’] is sent to Train(), etc.)
     # Each experiment starts by configuring the experiment parameters:
-    # Calling GetDefaultParameters()
     # Changing relevant parameters according to the specific experiments needs
     # Do not keep hidden constants in the code (use parameters to set them)
-    pass
+
+    parms = {
+        "Data":
+            {
+                "DataPath": data_path,
+                "ClassIndices": class_indices,
+                "MaxNumOfImages": 40,
+                "ResultsPath": os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
+                "ResultsFileName": 'ResultsOfEx1.pkl'
+            },
+        "Prepare":
+            {
+                "PixelsPerCell": 20,
+                "CellsPerBlock": 4,
+                "S": 200
+            },
+        "Train":
+            {
+                "SvmPenalty": 1,
+                "PolyDegree": 2
+            },
+        "Split": {
+            "DefaultSplit": 20,
+            "ForTuneSplit": 10
+        },
+        "Cache":
+            {
+                "CachePath": os.path.join(os.getcwd(), 'Task1_Representation', 'Cache'),
+                "CacheFileName": '1.pkl',
+                "UseCacheFlagForXX": False
+            }
+    }
+    return parms
 
 
 def get_data(path_to_data):
