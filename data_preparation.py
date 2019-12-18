@@ -58,19 +58,18 @@ def _extract__images_from_folders(data_details):
     }
     class_indices = data_details['ClassIndices']
     for class_number in class_indices:
-        class_name = os.listdir(data_details['DataPath'])[class_number]
-        list = sorted(os.listdir(data_details['DataPath']))
-        print(list)
-        print(len(os.listdir(data_details['DataPath'])))
-        # print(class_name)
-        # print(os.listdir(os.path.join(data_details['DataPath'], class_name)))
+        print(sorted(os.listdir(data_details['DataPath']),key=str.lower))
+        class_name = sorted(os.listdir(data_details['DataPath']),key=str.lower)[class_number-1]
+        print(class_name)
         counter = 0
-        for file in os.listdir(os.path.join(data_details['DataPath'], class_name)):
+        for file in sorted(os.listdir(os.path.join(data_details['DataPath'], class_name))):
+            # print(sorted(os.listdir(os.path.join(data_details['DataPath'], class_name))))
             if file.endswith('.jpg') and counter < data_details['MaxNumOfImages']:
                 image = cv2.imread(os.path.join(data_details['DataPath'], class_name, file))
                 fixed_data['Data'].append(image)
                 fixed_data['Labels'].append(class_name)
                 counter = counter + 1
+    #    print(fixed_data)
     return fixed_data
 
 
