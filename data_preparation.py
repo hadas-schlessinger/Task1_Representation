@@ -78,9 +78,10 @@ def get_data(parms):
     return pickle.dump(dand_l, open(pickle_file_name, "wb"))
 
 
-def split_data(pickel_file, split_parameters):
+def split_data(parms):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
+
     pass
 
 
