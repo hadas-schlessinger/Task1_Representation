@@ -44,7 +44,8 @@ def get_default_parameters(data_path, class_indices):
         "Pickle":
             {
                 "PicklePath": os.path.join(os.getcwd(), 'Pickle'),
-                "PickleFileName": 'data.pkl',
+                "PickleTrain": 'train.pkl',
+                "PickleTest": 'test.pkl'
             }
     }
     return parms
@@ -70,45 +71,39 @@ def _extract__images_from_folders(data_details):
     return fixed_data
 
 
-def set_data(parms):
+def set_and_split_data(parms):
     # each time we change the data classes
     dand_l = _extract__images_from_folders(parms['Data'])
-    pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
-    pickle.dump(dand_l, open(pickle_file_name, "wb"))
+    train, test = split_data(dand_l, parms)
+    pickle_train_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTrain'])
+    pickle_test_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTest'])
+    pickle.dump(train, open(pickle_train_file_name, "wb"))
+    pickle.dump(test, open(pickle_test_file_name, "wb"))
 
 
 def split_data(params):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
-    '''
-           converting the image into vector of features for further use. before
-           that the image is turning into grayscale and resized
-           :input Params:
-               Data - a vector of images which need to be converted
-               PrepareParams - see GetDefaultParameters()
-           :output Params:
-               Resualt: vector contating all the images and their features
-        '''
-    data = pickle.load(open(, "rb" ))
-    DataRep = []
-    Resualt = []
-    for i in Data:
-        i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
-        i = cv2.resize(i, (PrepareParams["S"], PrepareParams["S"]))
-        DataRep.append(i)
+   pass
 
-    for i in DataRep:
+
+def prepare(params):
+    # Compute the representation function: Turn the images into vectors for classification
+    data = load_data(params)
+    converted_data = []
+    reaults = []
+    for i in data:
+        i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+        i = cv2.resize(i, (params['Prepare']['S'], params['Prepare']['S']))
+        converted_data.append(i)
+
+    for i in converted_data:
         ImageRep = hog(i, orientations=8,
-                       pixels_per_cell=(PrepareParams["PixelsPerCell"], PrepareParams["PixelsPerCell"]),
-                       cells_per_block=(PrepareParams["CellsPerBlock"], PrepareParams["CellsPerBlock"]))
+                       pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
+                       cells_per_block=(params['Prepare']["CellsPerBlock"], params['Prepare']["CellsPerBlock"]))
         Resualt.append(ImageRep)
     return Resualt
-    pass
 
-
-def prepare(train_data, parms):
-    # Compute the representation function: Turn the images into vectors for classification
-    pass
 
 
 def load_data(params):
