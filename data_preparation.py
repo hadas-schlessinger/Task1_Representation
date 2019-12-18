@@ -38,8 +38,8 @@ def get_default_parameters(data_path, class_indices):
                 "PolyDegree": 2
             },
         "Split": {
-            "DefaultSplit": 20,
-            "ForTuneSplit": 10
+            "TrainTestSize": 20,
+            "TuningSize": 10
         },
         "Pickle":
             {
@@ -58,9 +58,7 @@ def _extract__images_from_folders(data_details):
     }
     class_indices = data_details['ClassIndices']
     for class_number in class_indices:
-        print(sorted(os.listdir(data_details['DataPath']),key=str.lower))
         class_name = sorted(os.listdir(data_details['DataPath']),key=str.lower)[class_number-1]
-        print(class_name)
         counter = 0
         for file in sorted(os.listdir(os.path.join(data_details['DataPath'], class_name))):
             # print(sorted(os.listdir(os.path.join(data_details['DataPath'], class_name))))
@@ -69,7 +67,6 @@ def _extract__images_from_folders(data_details):
                 fixed_data['Data'].append(image)
                 fixed_data['Labels'].append(class_name)
                 counter = counter + 1
-    #    print(fixed_data)
     return fixed_data
 
 
@@ -81,7 +78,7 @@ def get_data(parms):
     return pickle.dump(dand_l, open(pickle_file_name, "wb"))
 
 
-def train_split_data(data, lables, split):
+def split_data(pickel_file, split_parameters):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
     pass
