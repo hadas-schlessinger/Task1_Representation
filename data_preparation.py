@@ -6,6 +6,7 @@ import skimage.feature
 import skimage.color
 import sklearn
 from matplotlib import pyplot as plt
+from skimage.feature import hog
 
 
 def get_default_parameters(data_path, class_indices):
@@ -43,9 +44,9 @@ def get_default_parameters(data_path, class_indices):
         },
         "Pickle":
             {
-                "PicklePath": os.path.join(os.getcwd(), 'Pickle'),
-                "PickleTrain": 'train.pkl',
-                "PickleTest": 'test.pkl'
+                'PicklePath': os.path.join(os.getcwd(), 'Pickle'),
+                'PickleTrain': 'train.pkl',
+                'PickleTest': 'test.pkl'
             }
     }
     return parms
@@ -73,8 +74,7 @@ def _extract__images_from_folders(data_details):
 
 def set_and_split_data(parms):
     # each time we change the data classes
-    dand_l = _extract__images_from_folders(parms['Data'])
-    train, test = split_data(dand_l, parms)
+    train, test = _extract__images_from_folders(parms['Data'])
     pickle_train_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTrain'])
     pickle_test_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTest'])
     pickle.dump(train, open(pickle_train_file_name, "wb"))
@@ -94,27 +94,25 @@ def split_data(params):
    pass
 
 
-def prepare(params):
+def prepare(params, pkl_name):
     # Compute the representation function: Turn the images into vectors for classification
-    data = load_data(params)
-    converted_data = []
-    reaults = []
-    for i in data:
-        i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
-        i = cv2.resize(i, (params['Prepare']['S'], params['Prepare']['S']))
-        converted_data.append(i)
-
-    for i in converted_data:
-        ImageRep = hog(i, orientations=8,
-                       pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
-                       cells_per_block=(params['Prepare']["CellsPerBlock"], params['Prepare']["CellsPerBlock"]))
-        Resualt.append(ImageRep)
-    return
-
+    data = load_data(params, pkl_name)
+    ready_data = {
+        'Data': [],
+        'Labels': []
+    }
+    for img, label in data['Data'],data['Labels']:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = cv2.resize(img, (params['Prepare']['S'], params['Prepare']['S']))
+        converted_image = hog(img, orientations=8,pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
+                              cells_per_block=(params['Prepare']["CellsPerBlock"], params['Prepare']["CellsPerBlock"]))
+        ready_data['Data'].append(converted_image)
+        ready_data['Labels'].append(label)
+    return ready_data
 
 
-def load_data(params):
-    pickle_file_name = os.path.join(params['Pickle']['PicklePath'], params['Pickle']['PickleFileName'])
+def load_data(params, file_name):
+    pickle_file_name = os.path.join(params['Pickle']['PicklePath'], file_name)
     return pickle.load(open(pickle_file_name, "rb"))
 
 
