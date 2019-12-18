@@ -101,7 +101,7 @@ def prepare(params, pkl_name):
         'Data': [],
         'Labels': []
     }
-    for img, label in data['Data'],data['Labels']:
+    for img, label in data['Data'], data['Labels']:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img = cv2.resize(img, (params['Prepare']['S'], params['Prepare']['S']))
         converted_image = hog(img, orientations=8,pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
