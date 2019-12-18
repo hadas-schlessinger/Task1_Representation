@@ -44,7 +44,8 @@ def get_default_parameters(data_path, class_indices):
         "Pickle":
             {
                 "PicklePath": os.path.join(os.getcwd(), 'Pickle'),
-                "PickleFileName": 'data.pkl',
+                "PickleTrain": 'train.pkl',
+                "PickleTest": 'test.pkl'
             }
     }
     return parms
@@ -70,27 +71,51 @@ def _extract__images_from_folders(data_details):
     return fixed_data
 
 
-def get_data(parms):
+def set_and_split_data(parms):
     # each time we change the data classes
     dand_l = _extract__images_from_folders(parms['Data'])
-    pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
-    print(pickle_file_name)
-    return pickle.dump(dand_l, open(pickle_file_name, "wb"))
+    train, test = split_data(dand_l, parms)
+    pickle_train_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTrain'])
+    pickle_test_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTest'])
+    pickle.dump(train, open(pickle_train_file_name, "wb"))
+    pickle.dump(test, open(pickle_test_file_name, "wb"))
 
 
+<<<<<<< HEAD
 def split_data(parms):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
 
     pass
+=======
+def split_data(params):
+    # Splits the data and labels according to a ratio defined in Params
+    # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
+   pass
+>>>>>>> 67a9ceaba0edf52a6a94001a90a4b7584e0792da
 
 
-def prepare(train_data, parms):
+def prepare(params):
     # Compute the representation function: Turn the images into vectors for classification
-    pass
+    data = load_data(params)
+    converted_data = []
+    reaults = []
+    for i in data:
+        i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+        i = cv2.resize(i, (params['Prepare']['S'], params['Prepare']['S']))
+        converted_data.append(i)
+
+    for i in converted_data:
+        ImageRep = hog(i, orientations=8,
+                       pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
+                       cells_per_block=(params['Prepare']["CellsPerBlock"], params['Prepare']["CellsPerBlock"]))
+        Resualt.append(ImageRep)
+    return Resualt
 
 
-def load_data(pickle_file_name):
+
+def load_data(params):
+    pickle_file_name = os.path.join(params['Pickle']['PicklePath'], params['Pickle']['PickleFileName'])
     return pickle.load(open(pickle_file_name, "rb"))
 
 
