@@ -70,17 +70,39 @@ def _extract__images_from_folders(data_details):
     return fixed_data
 
 
-def get_data(parms):
+def set_data(parms):
     # each time we change the data classes
     dand_l = _extract__images_from_folders(parms['Data'])
     pickle_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleFileName'])
-    print(pickle_file_name)
-    return pickle.dump(dand_l, open(pickle_file_name, "wb"))
+    pickle.dump(dand_l, open(pickle_file_name, "wb"))
 
 
-def split_data(pickel_file, split_parameters):
+def split_data(params):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
+    '''
+           converting the image into vector of features for further use. before
+           that the image is turning into grayscale and resized
+           :input Params:
+               Data - a vector of images which need to be converted
+               PrepareParams - see GetDefaultParameters()
+           :output Params:
+               Resualt: vector contating all the images and their features
+        '''
+    data = pickle.load(open(, "rb" ))
+    DataRep = []
+    Resualt = []
+    for i in Data:
+        i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+        i = cv2.resize(i, (PrepareParams["S"], PrepareParams["S"]))
+        DataRep.append(i)
+
+    for i in DataRep:
+        ImageRep = hog(i, orientations=8,
+                       pixels_per_cell=(PrepareParams["PixelsPerCell"], PrepareParams["PixelsPerCell"]),
+                       cells_per_block=(PrepareParams["CellsPerBlock"], PrepareParams["CellsPerBlock"]))
+        Resualt.append(ImageRep)
+    return Resualt
     pass
 
 
@@ -89,7 +111,8 @@ def prepare(train_data, parms):
     pass
 
 
-def load_data(pickle_file_name):
+def load_data(params):
+    pickle_file_name = os.path.join(params['Pickle']['PicklePath'], params['Pickle']['PickleFileName'])
     return pickle.load(open(pickle_file_name, "rb"))
 
 
