@@ -6,6 +6,8 @@ import skimage.feature
 import skimage.color
 import sklearn
 from matplotlib import pyplot as plt
+from sklearn.model_selection import train_test_split
+
 
 
 def get_default_parameters(data_path, class_indices):
@@ -52,47 +54,45 @@ def get_default_parameters(data_path, class_indices):
 
 
 def _extract__images_from_folders(data_details):
-    # Puts the data in DandL[‘Data’], the labels in DandL[‘Labels’]
-    fixed_data = {
-        'Data': [],
-        'Labels': []
+
+    fixed_train_data= {
+        'train_data': [],
+        'train_labels': []
+    }
+    fixed_test_data = {
+        'test_data': [],
+        'test_labels': []
     }
     class_indices = data_details['ClassIndices']
+
     for class_number in class_indices:
         class_name = sorted(os.listdir(data_details['DataPath']),key=str.lower)[class_number-1]
-        counter = 0
-        for file in sorted(os.listdir(os.path.join(data_details['DataPath'], class_name))):
-            # print(sorted(os.listdir(os.path.join(data_details['DataPath'], class_name))))
-            if file.endswith('.jpg') and counter < data_details['MaxNumOfImages']:
-                image = cv2.imread(os.path.join(data_details['DataPath'], class_name, file))
-                fixed_data['Data'].append(image)
-                fixed_data['Labels'].append(class_name)
-                counter = counter + 1
-    return fixed_data
+        list_files = sorted(os.listdir(os.path.join(data_details['DataPath'], class_name)))
+        train_counter, test_counter = 0
+        for file in list_files:
+            image = cv2.imread(os.path.join(data_details['DataPath'], class_name, file))
+
+            if file.endswith('.jpg') and train_counter < data_details['TrainTestSize']:
+                fixed_train_data['train_data'].append(image)
+                fixed_train_data['train_labels'].append(class_name)
+                train_counter = train_counter + 1
+            else:
+                if file.endswith('.jpg') and test_counter < data_details['TrainTestSize']:
+                    fixed_test_data['test_data'].append(image)
+                    fixed_test_data['test_labels'].append(class_name)
+                    test_counter = test_counter + 1
+                else:
+                    break
+    return fixed_train_data, fixed_test_data
 
 
 def set_and_split_data(parms):
     # each time we change the data classes
-    dand_l = _extract__images_from_folders(parms['Data'])
-    train, test = split_data(dand_l, parms)
+    train, test = _extract__images_from_folders(parms['Data'])
     pickle_train_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTrain'])
     pickle_test_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTest'])
     pickle.dump(train, open(pickle_train_file_name, "wb"))
     pickle.dump(test, open(pickle_test_file_name, "wb"))
-
-
-<<<<<<< HEAD
-def split_data(parms):
-    # Splits the data and labels according to a ratio defined in Params
-    # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
-
-    pass
-=======
-def split_data(params):
-    # Splits the data and labels according to a ratio defined in Params
-    # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
-   pass
->>>>>>> 67a9ceaba0edf52a6a94001a90a4b7584e0792da
 
 
 def prepare(params):
