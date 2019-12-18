@@ -10,8 +10,8 @@ def main():
     class_tuning = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     params = dp.get_default_parameters(data_path, class_indices)   # (experiment specific parameters override)
     np.random.seed(0)  # Seed
-    pickel_file = dp.get_data(params)
-    split_data = dp.split_data(pickel_file, params['Split'])
+    pickle_file = dp.get_data(params)
+    split_data = dp.split_data(pickle_file, params['Split'])
     # # returns train data, test data, train labels and test labels
     # train_data_rep = dp.prepare(split_data['Train']['Data'], params['Prepare'])
     # tuning_parameters = model.tuning(class_tuning)
