@@ -81,6 +81,13 @@ def set_and_split_data(parms):
     pickle.dump(test, open(pickle_test_file_name, "wb"))
 
 
+def split_data(parms):
+    # Splits the data and labels according to a ratio defined in Params
+    # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
+
+    pass
+
+
 def split_data(params):
     # Splits the data and labels according to a ratio defined in Params
     # SplitData includes fields: TrainData, TestData, TrainLabels, TestLabels
