@@ -9,77 +9,74 @@ from matplotlib import pyplot as plt
 from skimage.feature import hog
 
 
-
 def get_default_parameters(data_path, class_indices):
     # Returns a dict containing the default experiment parameters
     # It has several fields, each itself a dict of parameters for the various experiment stages
-    # These are ‘Split’, ‘Prepare’, ‘Train’, ‘Summary’, ‘Report’ (according to the needs)
-    # Each struct is sent to the relevant function (i.e. Params[‘Train’] is sent to Train(), etc.)
+    # These are ‘split’, ‘prepare’, ‘train’, ‘Summary’, ‘Report’ (according to the needs)
+    # Each struct is sent to the relevant function (i.e. Params[‘train’] is sent to train(), etc.)
     # Each experiment starts by configuring the experiment parameters:
     # Changing relevant parameters according to the specific experiments needs
     # Do not keep hidden constants in the code (use parameters to set them)
 
     parms = {
-        "Data":
+        'data':
             {
-                "DataPath": data_path,
-                "ClassIndices": class_indices,
-                "MaxNumOfImages": 40,
-                "ResultsPath": os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
-                "ResultsFileName": 'Results.pkl'
+                'data_path': data_path,
+                'class_inc': class_indices,
+                'results_path': os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
+                'results_file_name': 'results.pkl'
             },
-        "Prepare":
+        'prepare':
             {
-                "PixelsPerCell": 20,
-                "CellsPerBlock": 4,
-                "S": 200
+                'pixels_per_cell': 20,
+                'cells_per_block': 4,
+                'S': 200
             },
-        "Train":
+        'train':
             {
-                "SvmPenalty": 1,
-                "PolyDegree": 2
+                'svm_penalty': 1,
+                'poly_degree': 2
             },
-        "Split": {
-            "TrainTestSize": 20,
-            "TuningSize": 10
+        'split': {
+            'train_test_size': 20,
+            'tuning_size': 10
         },
-        "Pickle":
+        'pickle':
             {
-                'PicklePath': os.path.join(os.getcwd(), 'Pickle'),
-                'PickleTrain': 'train.pkl',
-                'PickleTest': 'test.pkl'
+                'pickle_path': os.path.join(os.getcwd(), 'pickle'),
+                'pickle_train': 'train.pkl',
+                'pickle_test': 'test.pkl'
             }
     }
     return parms
 
 
 def _extract__images_from_folders(data_details):
-
-    fixed_train_data= {
-        'train_data': [],
-        'train_labels': []
+    fixed_train_data = {
+        'data': [],
+        'labels': []
     }
     fixed_test_data = {
-        'test_data': [],
-        'test_labels': []
+        'data': [],
+        'labels': []
     }
-    class_indices = data_details['ClassIndices']
+    class_indices = data_details['class_indices']
 
     for class_number in class_indices:
-        class_name = sorted(os.listdir(data_details['DataPath']),key=str.lower)[class_number-1]
-        list_files = sorted(os.listdir(os.path.join(data_details['DataPath'], class_name)))
+        class_name = sorted(os.listdir(data_details['data_path']),key=str.lower)[class_number-1]
+        list_files = sorted(os.listdir(os.path.join(data_details['data_path'], class_name)))
         train_counter, test_counter = 0
         for file in list_files:
-            image = cv2.imread(os.path.join(data_details['DataPath'], class_name, file))
+            image = cv2.imread(os.path.join(data_details['data_path'], class_name, file))
 
-            if file.endswith('.jpg') and train_counter < data_details['TrainTestSize']:
-                fixed_train_data['train_data'].append(image)
-                fixed_train_data['train_labels'].append(class_name)
+            if file.endswith('.jpg') and train_counter < data_details['train_test_size']:
+                fixed_train_data['data'].append(image)
+                fixed_train_data['labels'].append(class_name)
                 train_counter = train_counter + 1
             else:
-                if file.endswith('.jpg') and test_counter < data_details['TrainTestSize']:
-                    fixed_test_data['test_data'].append(image)
-                    fixed_test_data['test_labels'].append(class_name)
+                if file.endswith('.jpg') and test_counter < data_details['train_test_size']:
+                    fixed_test_data['data'].append(image)
+                    fixed_test_data['labels'].append(class_name)
                     test_counter = test_counter + 1
                 else:
                     break
@@ -88,34 +85,32 @@ def _extract__images_from_folders(data_details):
 
 def set_and_split_data(parms):
     # each time we change the data classes
-    train, test = _extract__images_from_folders(parms['Data'])
-    pickle_train_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTrain'])
-    pickle_test_file_name = os.path.join(parms['Pickle']['PicklePath'], parms['Pickle']['PickleTest'])
-    pickle.dump(train, open(pickle_train_file_name, "wb"))
-    pickle.dump(test, open(pickle_test_file_name, "wb"))
-
-
+    train, test = _extract__images_from_folders(parms['data'])
+    pickle_train_file_name = os.path.join(parms['pickle']['pickle_path'], parms['pickle']['pickle_train'])
+    pickle_test_file_name = os.path.join(parms['pickle']['pickle_path'], parms['pickle']['pickle_test'])
+    pickle.dump(train, open(pickle_train_file_name, 'wb'))
+    pickle.dump(test, open(pickle_test_file_name, 'wb'))
 
 
 def prepare(params, pkl_name):
     # Compute the representation function: Turn the images into vectors for classification
     data = load_data(params, pkl_name)
     ready_data = {
-        'Data': [],
-        'Labels': []
+        'data': [],
+        'labels': []
     }
-    for img, label in data['Data'], data['Labels']:
+    for img, label in data['data'], data['labels']:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        img = cv2.resize(img, (params['Prepare']['S'], params['Prepare']['S']))
-        converted_image = hog(img, orientations=8,pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
-                              cells_per_block=(params['Prepare']["CellsPerBlock"], params['Prepare']["CellsPerBlock"]))
-        ready_data['Data'].append(converted_image)
-        ready_data['Labels'].append(label)
+        img = cv2.resize(img, (params['prepare']['S'], params['prepare']['S']))
+        converted_image = hog(img, orientations=8,pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
+                              cells_per_block=(params['prepare']['cells_per_block'], params['prepare']['cells_per_block']))
+        ready_data['data'].append(converted_image)
+        ready_data['labels'].append(label)
     return ready_data
 
 
 def load_data(params, file_name):
-    pickle_file_name = os.path.join(params['Pickle']['PicklePath'], file_name)
-    return pickle.load(open(pickle_file_name, "rb"))
+    pickle_file_name = os.path.join(params['pickle']['pickle_path'], file_name)
+    return pickle.load(open(pickle_file_name, 'rb'))
 
 
