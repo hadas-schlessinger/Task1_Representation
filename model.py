@@ -11,15 +11,14 @@ import sklearn.preprocessing
 from matplotlib import pyplot as plt
 
 
-def train(train_data_rep, split_data, params, class_indices, tuning_parameters):
+def train(train_data, training_parameters, class_indices):
     # the functions implementing the actual learning algorithm and the classifier
-    _hog()
     m_classes_svm = _m_classes_svm_train(class_indices)
     results = _m_classes_predict(m_classes_svm)
     return results
 
 
-def tuning(class_tuning, class_indices):
+def tuning(train_data):
     # If hyper parameter tuning is required, replace the call to train() in main,
     # with a call to TrainWithTuning() which internally also does the hyper parameter tuning (see slides 11-14)
     # do on class 1-10
@@ -41,10 +40,6 @@ def report_results(summary, params):
     # print the error results and confusion matrix and error images
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
-    pass
-
-
-def _hog():
     pass
 
 
