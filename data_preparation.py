@@ -102,7 +102,7 @@ def prepare(params):
                        pixels_per_cell=(params['Prepare']["PixelsPerCell"], params['Prepare']["PixelsPerCell"]),
                        cells_per_block=(params['Prepare']["CellsPerBlock"], params['Prepare']["CellsPerBlock"]))
         Resualt.append(ImageRep)
-    return Resualt
+    return
 
 
 
