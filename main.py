@@ -35,7 +35,8 @@ def get_default_parameters():
         'prepare':
             {
                 'pixels_per_cell': 20,
-                'cells_per_block': 4,
+                'cells_per_block': 10,
+                'orientations_bins': 4,
                 'S': 200
             },
         'train':
@@ -109,8 +110,8 @@ def prepare(params, data):
     }
     for img in data['data']:
         img = cv2.resize(img, (params['prepare']['S'], params['prepare']['S']))
-        converted_image = hog(img, orientations=8,pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
-                              cells_per_block=(params['prepare']['cells_per_block'], params['prepare']['cells_per_block']))
+        converted_image = hog(img, orientations= params['prepare']['number_of_bins'], pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
+                              cells_per_block=(params['prepare'] ['cells_per_block'], params['prepare']['cells_per_block']))
         ready_data['data'].append(converted_image)
     for label in data['labels']: ready_data['labels'].append(label)
     return ready_data
@@ -131,53 +132,32 @@ def train_model(train_data, data_labels, params):
 
 
 def tuning(params,train):
-
-    image_size = [100, 129, 150, 190, 220, 290, 300]
-    pixels_per_cell = [8, 16, 32, 64]
-    c_params = [0.01, 0.1, 0.2, 0.3, 1, 10]
-    degree_params = [2,3,4]
     train_of_cross_val, test_of_cross_val = train_test_split(train['data'], train['labels'], train_size=0.7)
-    kernel_type =['linear', 'rbf', 'poly']
-    hog_cells_per_block = [1]
-    tests = []
-
-    for k in kernel_type:
-        params['prepare']['kernel'] = k
-            for s in image_size:
-                params['prepare']['S'] = s
-                    for pixels_per_cell in hog_pixels_per_cell:
-                        params['prepare']['pixels_per_cell'] = pixels_per_cell
-                        for cells_per_block in hog_cells_per_block:
-                            params['prepare']['cells_per_block'] = cells_per_block
-                            hog_images_train = prepare(params, train_of_cross_val)
-                            hog_images_test = prepare(params, test_of_cross_val)
-                            for c in c_params:
-                                params['prepare']['c'] = c
-                                if k == 'poly':
-                                    for degree in degree_params:
-                                        params['prepare']['degree'] = degree
-                                        trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
-                                else:
-                                    trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
-                                results = test(trained_model, test_of_cross_val)
-                                summary = evaluate(results)
-
-def test(trained_model, test_data_rep):
-    pass
-
-
-def evaluate(results,split_data, params):
-    # Compute the results statistics and return them as fields of Summary For classification these are:
-    # Most important: the error rate In our case also:
-    # Confusion matrix, the indices of the largest error images
-    pass
-
-
-def report_results(summary, params):
-    # print the error results and confusion matrix and error images
-    # Draws the results figures, reports results to the screen
-    # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
-    return True
+    tuning_error_per_set = []
+    for kernel in ['linear', 'rbf', 'poly']:
+        params['prepare']['kernel'] = kernel
+        for size in [100, 129, 150, 190, 220, 290, 300]:
+            params['prepare']['S'] = size
+            for pixels_per_cell in [8, 16, 32, 64]:
+                params['prepare']['pixels_per_cell'] = pixels_per_cell
+                for cells_per_block in range(2, 6, 1):
+                    params['prepare']['cells_per_block'] = cells_per_block
+                    for orientations in range(4,10,1):
+                        params['prepare']['orientations_bins'] = orientations
+                        hog_images_train = prepare(params, train_of_cross_val)
+                        hog_images_test = prepare(params, test_of_cross_val)
+                        for c in [0.01, 0.1, 0.2, 0.3, 1, 10]:
+                            params['prepare']['c'] = c
+                            if kernel == 'poly':
+                                for degree in [2, 3, 4]:
+                                    params['prepare']['degree'] = degree
+                                    trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
+                            else:
+                                trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
+                            score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
+                            error_of_valid, matrix = _evaluate(predictions, hog_images_test['labels'])
+                            tuning_error_per_set.append(kernel, size, pixels_per_cell, orientations, c, error_of_valid)
+    return tuning_error_per_set
 
 
 def _create_labels(labels, current_class):
@@ -224,11 +204,6 @@ def _m_classes_predict(hog_data, m_classes_svm, class_indices, data_path):
         # find max probability and put the labels of it in predictions
         predictions.append(sorted(os.listdir(data_path), key=str.lower)[class_indices[np.argmax(results_per_image)]-1])
     return score_matrix, predictions
-
-
-def tuning(params, train):
-    train_data = prepare(params, train)
-    pass
 
 
 def train_model(train_data, data_labels, params):
