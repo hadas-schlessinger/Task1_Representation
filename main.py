@@ -255,22 +255,29 @@ def _list_worst_images(margins, img_path, number_of_img):
         num_of_images = num_of_images + number_of_img[current_class]
         worst_img_index= np.argmin(margins[i:num_of_images])
         #val, = np.where(margins == worst_img_value)
-        error_images.append(img_path[worst_img_index]) if val[0] is not 0 else error_images.append("None")
+        error_images.append(img_path[worst_img_index]) if val[0] != 0 else error_images.append("None")
         margins[val[0]] = 0
         worst_img_index2 = np.argmin(margins[i:number_of_img[current_class]])
         #val, = np.where(margins == worst_img_value2)
         #error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
-        error_images.append(img_path[worst_img_index2]) if val[0] is not 0 else error_images.append("None")
+        error_images.append(img_path[worst_img_index2]) if val[0] != 0 else error_images.append("None")
         current_class = current_class+1
     return error_images
 
 
-def _present_and_save_images(list_of_2_worst_images):
+def _present_and_save_images(list_of_2_worst_images,class_indices,data_path):
     f = 0
     for i in range(len(list_of_2_worst_images)):
+        if (i % 2) != 0:
+            counter_per_class = 0
         if list_of_2_worst_images[i] != 'None':
             image = cv2.imread(list_of_2_worst_images[i])  # image read
             plt.imshow(image, cmap='gray', interpolation='bicubic')
+        else:
+            counter_per_class =counter_per_class + 1
+        if counter_per_class == 2:
+            test_labels
+            print('that there were no errors for the class', class_name)
 
 
 def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img):
@@ -279,9 +286,7 @@ def report_results(predictions, score_matrix, data_path, test_labels, img_path, 
     print(f'confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels, data_path)
     worst_images = _list_worst_images(margins, img_path, number_of_img)
-    _present_and_save_images(worst_images)
-    #worst_images = _list_worst_images(margins, img_path, number_of_img)
-    # _present_and_save_images(worst_images)
+    _present_and_save_images(worst_images, ,number_of_img)
 
 ################# main ####################
 
