@@ -10,6 +10,7 @@ import sklearn
 import sklearn.svm
 from matplotlib import pyplot as plt
 from skimage.feature import hog
+from sklearn.model_selection import train_test_split
 
 
 ####################### data preparation #######################
@@ -122,6 +123,61 @@ def load_data(params, file_name):
 ####################### model #######################
 
 
+def train_model(train_data, data_labels, params):
+    # the functions implementing the actual learning algorithm and the classifier
+    m_classes_svm = _m_classes_svm_train(train_data, data_labels, params, params['data']['class_indices'])
+    results = _m_classes_predict(m_classes_svm)
+    return results
+
+
+def tuning(params,train):
+
+    image_size = [100, 129, 150, 190, 220, 290, 300]
+    pixels_per_cell = [8, 16, 32, 64]
+    c_params = [0.01, 0.1, 0.2, 0.3, 1, 10]
+    degree_params = [2,3,4]
+    train_of_cross_val, test_of_cross_val = train_test_split(train['data'], train['labels'], train_size=0.7)
+    kernel_type =['linear', 'rbf', 'poly']
+    hog_cells_per_block = [1]
+    tests = []
+
+    for k in kernel_type:
+        params['prepare']['kernel'] = k
+            for s in image_size:
+                params['prepare']['S'] = s
+                    for pixels_per_cell in hog_pixels_per_cell:
+                        params['prepare']['pixels_per_cell'] = pixels_per_cell
+                        for cells_per_block in hog_cells_per_block:
+                            params['prepare']['cells_per_block'] = cells_per_block
+                            hog_images_train = prepare(params, train_of_cross_val)
+                            hog_images_test = prepare(params, test_of_cross_val)
+                            for c in c_params:
+                                params['prepare']['c'] = c
+                                if k == 'poly':
+                                    for degree in degree_params:
+                                        params['prepare']['degree'] = degree
+                                        trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
+                                else:
+                                    trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
+                                results = test(trained_model, test_of_cross_val)
+                                summary = evaluate(results)
+
+def test(trained_model, test_data_rep):
+    pass
+
+
+def evaluate(results,split_data, params):
+    # Compute the results statistics and return them as fields of Summary For classification these are:
+    # Most important: the error rate In our case also:
+    # Confusion matrix, the indices of the largest error images
+    pass
+
+
+def report_results(summary, params):
+    # print the error results and confusion matrix and error images
+    # Draws the results figures, reports results to the screen
+    # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
+    return True
 
 
 def _create_labels(labels, current_class):
@@ -212,18 +268,6 @@ def _present_and_save_images(images):
 
 
 
-def report_results(predictions, score_matrix, data_path, test_labels, class_indices):
-    # print the error results and confusion matrix and error images
-    # Draws the results figures, reports results to the screen
-    # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
-    error_rate, confusion_matrix = _evaluate(predictions, test_labels)
-    print(f'the error rate is: {error_rate}')
-    print(f'the confusion_matrix is: {confusion_matrix}')
-    margins = _calc_margins(score_matrix, test_labels)
-    worst_images = _list_worst_images(margins, data_path)
-    _present_and_save_images(worst_images)
-
-
 ################# main ####################
 
 
@@ -231,7 +275,7 @@ def main():
     params = get_default_parameters()   # (experiment specific parameters override)
     np.random.seed(0)  # seed
     train, test = set_and_split_data(params)
-#   tuning(train)
+    tuning(params, train)
     train_data = prepare(params, train)
     test_data = prepare(params, test)
     model = train_model(train_data['data'], train_data['labels'], params)
