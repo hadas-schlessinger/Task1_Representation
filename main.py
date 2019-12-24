@@ -220,8 +220,8 @@ def test_model(test_data, trained_model, data_details):
 
 def _evaluate(predictions, test_labels):
     # Compute the results statistics - error rate and confusion matrix
-    error = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
-    return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
+    correct = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
+    return (1 - (correct/len(test_labels))), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
 
 def _calc_margins(score_matrix, test_labels, data_path):
@@ -262,8 +262,12 @@ def _list_worst_images(margins, img_path, number_of_img):
     return error_images
 
 
-def _present_and_save_images(images):
-    pass
+def _present_and_save_images(list_of_2_worst_images):
+    f = 0
+    for i in range(len(list_of_2_worst_images)):
+        if list_of_2_worst_images[i] != 'None':
+            image = cv2.imread(list_of_2_worst_images[i])  # image read
+            plt.imshow(image, cmap='gray', interpolation='bicubic')
 
 
 def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img):
@@ -272,7 +276,7 @@ def report_results(predictions, score_matrix, data_path, test_labels, img_path, 
     print(f'confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels, data_path)
     worst_images = _list_worst_images(margins, img_path, number_of_img)
-    # _present_and_save_images(worst_images)
+    _present_and_save_images(worst_images)
 
 ################# main ####################
 
@@ -288,7 +292,41 @@ def main():
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
     report_results(predictions, score_matrix, params['data']['data_path'],
                    test_data['labels'], params['data']['image_path'], params['data']['number_of_test_img'])
+    """
+    #### for graph C VS ERROR:
+    cParams = np.arange(0.01, 1, 0.01)
+    sParams = [100]
+    hog_orientations = [8]
+    hog_pixels_per_cell = [16]
+    hog_cells_per_block = [1]
+    """
 
+    """
+    #### for graph S VS ERROR:
+    cParams = [0.01]
+    sParams = np.arange(100, 500, 10)
+    hog_orientations = [8]
+    hog_pixels_per_cell = [16]
+    hog_cells_per_block = [1]
+    """
+
+    """
+    #### for graph Orientation VS ERROR:
+    cParams = [0.01]
+    sParams = [100]
+    hog_orientations = np.arange(8, 180, 1)
+    hog_pixels_per_cell = [16]
+    hog_cells_per_block = [1]
+    """
+
+    """
+    #### for graph PPC VS ERROR:
+    cParams = [0.01]
+    sParams = [100]
+    hog_orientations = [8]
+    hog_pixels_per_cell = [8, 16, 32, 64]
+    hog_cells_per_block = [1]
+    """
 
 if __name__ == "__main__":
     main()
