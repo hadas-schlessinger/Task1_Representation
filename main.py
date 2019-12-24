@@ -50,7 +50,7 @@ def get_default_parameters():
                 'pickle_path': os.path.join(os.getcwd(), 'pickle'),
                 'pickle_train': 'train.pkl',
                 'pickle_test': 'test.pkl',
-                'first_run': True
+                'first_run': False
             }
     }
     return parms
@@ -125,8 +125,55 @@ def load_data(params, file_name):
 def train_model(train_data, data_labels, params):
     # the functions implementing the actual learning algorithm and the classifier
     m_classes_svm = _m_classes_svm_train(train_data, data_labels, params, params['data']['class_indices'])
-    results = _m_classes_predict(m_classes_svm)
+    results = _m_classes_predict(train_data, m_classes_svm, params['data']['class_indices'], params['data']['data_path'])
     return results
+
+
+def _create_labels(labels, current_class):
+    '''
+        this func is for -1 and 1 classifies for 1vs all svm
+        for each class the samples of the class get the label 1 and the rest of the classes get -1
+    '''
+
+    fixed_labels = np.zeros((len(labels),))
+    for i in range(len(labels)):
+        if (labels[i] == current_class):
+            fixed_labels[i] = 1
+        else:
+            fixed_labels[i] = -1
+    return fixed_labels
+
+
+def _svm(hog_data, fixed_labels, training_params):
+    # C-Support Vector Classification
+    svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'], gamma=training_params['gamma'],
+                          degree=training_params['degree'], probability=True)
+    model = svm.fit(hog_data, fixed_labels)  # train the data - fit the model per each class binary classifier
+    return model
+
+
+def _m_classes_svm_train(hog_data, data_labels, params, class_indices):
+    all_svms = []
+    for current_class in class_indices:
+        class_name = sorted(os.listdir(params['data']['data_path']), key=str.lower)[
+            current_class - 1]  # extract the class name for matching the lables
+        fixed_labels = _create_labels(data_labels, class_name)  # appending -1 or 1 if the class matched
+        all_svms.append(_svm(hog_data, fixed_labels, params['train']))
+    return all_svms
+
+
+def _m_classes_predict(hog_data, m_classes_svm, class_indices, data_path):
+    predictions = []
+    score_matrix = np.zeros((len(hog_data), len(class_indices)))
+    for current_class in range(len(class_indices)):
+        prob = m_classes_svm[current_class].predict_proba(hog_data)  # probability for an image to be in 1 of 2 classes
+        for sample in range(len(prob)):
+            score_matrix[sample, current_class] = prob[sample, 1]  # the score for sample i is to be from class 1 (j)
+    for y in range(len(hog_data)):
+        results_per_image = score_matrix[y, :] # takes all m probabilities for each sample
+        # find max probability and put the labels of it in predictions
+        predictions.append(sorted(os.listdir(data_path), key=str.lower)[class_indices[np.argmax(results_per_image)]-1])
+    return score_matrix, predictions
 
 
 def tuning(params, train):
@@ -152,63 +199,6 @@ def report_results(summary, params):
     return True
 
 
-def _create_labels(labels, current_class):
-    '''
-        this func is for -1 and 1 classifies for 1vs all svm
-        for each class the samples of the class get the label 1 and the rest of the classes get -1
-    '''
-
-    fixed_labels = np.zeros((len(labels),))
-    for i in range(len(labels)):
-        if (labels[i]==current_class):
-            fixed_labels[i] = 1
-        else:
-            fixed_labels[i] = -1
-    return fixed_labels
-
-
-def _svm(hog_data, fixed_labels, training_params):
-    # C-Support Vector Classification
-    svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'], gamma=training_params['gamma'], degree=training_params['degree'], probability=True)
-    model = svm.fit(hog_data, fixed_labels)  # train the data - fit the model per each class binary classifier
-    return model
-
-
-def _m_classes_svm_train(hog_data, data_labels, params, class_indices):
-    all_svms = []
-    for current_class in class_indices:
-        class_name = sorted(os.listdir(params['data']['data_path']), key=str.lower)[current_class-1] # extract the class name for matching the lables
-        fixed_labels = _create_labels(data_labels, class_name)  # appending -1 or 1 if the class matched
-        all_svms.append(_svm(hog_data, fixed_labels, params['train']))
-    return all_svms
-
-
-def _m_classes_predict(m_classes_svm):
-    # classesUniqueList = uniquelabels()  # creates a unique list of the classes
-    # numberOfImages = len(HOGTestdata)  # define the number of images
-    # predictions = []
-    # score_matrix = numpy.zeros((numberOfImages, len(classesUniqueList)))
-    # results_per_image = numpy.zeros((1, 10))  # results for 1 image - what is the probability for each class
-    # j = 0
-    # # for per each class and calc the prob for each image
-    # for j in range(len(classesUniqueList)):
-    #     proba = numpy.zeros((
-    #                         10,))  # for per each class and calc the probability for each image (what is the prob to be part of a class)
-    #     proba = n_models[j].predict_proba(HOGTestdata)
-    #     i = 0
-    #     for i in range(len(proba)):
-    #         score_matrix[i, j] = proba[i, 1]  # calc score matrix based on max proba
-    # y = 0
-    # for y in range(numberOfImages):
-    #     results_per_image = score_matrix[y, :]
-    #     # argmax is the calc by taking the argmax over the class score matrix columns
-    #     max = numpy.argmax(results_per_image)
-    #     predictions.append(classesUniqueList[max])  # find max argmax and put the lables of it in predictions
-    #
-    # return score_matrix, predictions
-    pass
-
-
 
 ################# main ####################
 
@@ -220,8 +210,9 @@ def main():
 #   tuning(train)
     train_data = prepare(params, train)
     trained_model = train_model(train_data['data'], train_data['labels'], params)
+    print(trained_model)
     test_data = prepare(params,test)
-    # results = test(trained_model, test_data)
+    results = test(trained_model, test_data)
     # summary = evaluate(results)
     # report_results(summary)
 
