@@ -183,7 +183,7 @@ def test_model(test_data, trained_model, data_details):
     return _m_classes_predict(test_data, trained_model, data_details['class_indices'], data_details['data_path'])
 
 
-def _evaluate(score_matrix, predictions, test_labels):
+def _evaluate(predictions, test_labels):
     # Compute the results statistics - error rate and confusion matrix
     error = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
     return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
@@ -205,9 +205,9 @@ def report_results(predictions, score_matrix, data_path, test_labels):
     # print the error results and confusion matrix and error images
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
-    error_rate, confusion_matrix = _evaluate(score_matrix, predictions, test_labels)
+    error_rate, confusion_matrix = _evaluate(predictions, test_labels)
     print(f'the error rate is: {error_rate}')
-    print(f'the confusion_matrixis: {confusion_matrix}')
+    print(f'the confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels)
     worst_images = _list_wrost_images(margins, data_path)
     _present_and_save_images(worst_images)
