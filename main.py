@@ -26,6 +26,8 @@ def get_default_parameters():
         'data':
             {
                 'data_path': os.path.join(os.getcwd(), '101_ObjectCategories'),
+                'image_path': [],
+                'number_of_test_img': [],
                 'class_indices': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 'results_path': os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
                 'results_file_name': 'results.pkl',
@@ -52,7 +54,7 @@ def get_default_parameters():
                 'pickle_path': os.path.join(os.getcwd(), 'pickle'),
                 'pickle_train': 'train.pkl',
                 'pickle_test': 'test.pkl',
-                'first_run': False
+                'first_run': True
             }
     }
     return parms
@@ -82,11 +84,13 @@ def _extract__images_from_folders(data_details):
                 train_counter = train_counter + 1
             else:
                 if file.endswith('.jpg') and test_counter < data_details['train_test_size']:
+                    data_details['image_path'].append(os.path.join(data_details['data_path'], class_name, file))
                     fixed_test_data['data'].append(image)
                     fixed_test_data['labels'].append(class_name)
                     test_counter = test_counter + 1
                 else:
                     break
+        data_details['number_of test_img'].append(test_counter)
     return fixed_train_data, fixed_test_data
 
 
@@ -220,29 +224,55 @@ def _evaluate(predictions, test_labels):
     return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
 
-def _calc_margins(score_matrix, test_lables):
-    classesUniqueList = uniquelabels()  # creates a unique list of the classes- real classes - test
-    margins = np.zeros((len(test_lables),))  # list of margins
-    i = 0
-    for i in range(len(labels_test)):
-        # loops the images and calculate - the image score for the real label minus the max score for this image
-        numbOfClass = numberOfClass(labels_test[i], classesUniqueList)
-        # number of class returns for an image the real class it belongs
-        # go to the probability and calc the score minus max in row
-        margins[i] = score_matrix[i, numbOfClass] - numpy.amax(
-            score_matrix[i, :])  # calc score matrix based on max proba
-        # marginsVector is a number-of-images vector represents the margin for each image
+def _calc_margins(score_matrix, test_labels, data_path):
+    '''
+        the function calcs the gap for each image by:
+        margin = real class prob score - the max score for the image
+        the max score for the image represent the predictive class
+    '''
+    margins = np.zeros((len(test_labels),))  # list of margins
+    for i in range(len(test_labels)):
+        margins[i] = score_matrix[i, sorted(os.listdir(data_path), key=str.lower).index(test_labels[i])] - np.amax(score_matrix[i, :])
     return margins
 
 
-def _list_worst_images(margins, data_path):
-    pass
+def _list_worst_images(margins, img_path, number_of_img):
+    val = 0
+    error_images = []
+    current_class = 0
+    for i in range(0, len(margins), number_of_img[current_class]):
+        worst_img_value = min(margins[i:number_of_img[current_class]])
+        val, = np.where(margins == worst_img_value)
+        value = val[0]
+        if (value != 0):
+            error_images.append(img_path[value])
+
+        else:
+            error_images.append("None")
+
+        margins[value] = 0
+        # maximum2 = min(Margins[i:numberOfims])
+        # val, = numpy.where(Margins == maximum2)
+        # value = val[0]
+        # if (value != 0):
+        #     imagesErrorClasses.append(list_of_pathes[value])
+        # else:
+        #     imagesErrorClasses.append("None")
+        numberOfims = numberOfims + 20
+    return error_images
 
 
 def _present_and_save_images(images):
     pass
 
 
+def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img):
+    error_rate, confusion_matrix = _evaluate(predictions, test_labels)
+    print(f'error rate is: {error_rate*100} %')
+    print(f'confusion_matrix is: {confusion_matrix}')
+    margins = _calc_margins(score_matrix, test_labels, data_path)
+    worst_images = _list_worst_images(margins, img_path, number_of_img)
+    # _present_and_save_images(worst_images)
 
 ################# main ####################
 
@@ -256,7 +286,8 @@ def main():
     test_data = prepare(params, test)
     model = train_model(train_data['data'], train_data['labels'], params)
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
-    report_results(predictions, score_matrix, params['data']['data_path'], test_data['labels'], params['data']['class_indices'])
+    report_results(predictions, score_matrix, params['data']['data_path'],
+                   test_data['labels'], params['data']['image_path'], params['data']['number_of_test_img'])
 
 
 if __name__ == "__main__":
