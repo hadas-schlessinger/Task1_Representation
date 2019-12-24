@@ -183,24 +183,34 @@ def test_model(test_data, trained_model, data_details):
     return _m_classes_predict(test_data, trained_model, data_details['class_indices'], data_details['data_path'])
 
 
-def evaluate(score_matrix, predictions, test_labels):
+def _evaluate(score_matrix, predictions, test_labels):
     # Compute the results statistics - error rate and confusion matrix
-    confusion_matrix = sklearn.metrics.confusion_matrix(test_labels, predictions)
-    # i = 0
-    # error = 0
-    # for i in range(len(predictions)):
-    #     if (predictions[i] != labels_test[i]):  # counts the number of unmatched true label array to prediction array
-    #         error = error + 1
-    #
-    # error_rate = error / len(labels_test)
-    return error_rate, confusion_matrix
+    error = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
+    return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
+
+def _calc_margins(score_matrix, test_lables):
+    pass
 
 
-def report_results(summary, params):
+def _list_wrost_images(margins, data_path):
+    pass
+
+
+def _present_and_save_images(images):
+    pass
+
+
+
+def report_results(predictions, score_matrix, data_path, test_labels):
     # print the error results and confusion matrix and error images
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
-    return True
+    error_rate, confusion_matrix = _evaluate(score_matrix, predictions, test_labels)
+    print(f'the error rate is: {error_rate}')
+    print(f'the confusion_matrixis: {confusion_matrix}')
+    margins = _calc_margins(score_matrix, test_labels)
+    worst_images = _list_wrost_images(margins, data_path)
+    _present_and_save_images(worst_images)
 
 
 ################# main ####################
@@ -215,8 +225,7 @@ def main():
     test_data = prepare(params, test)
     model = train_model(train_data['data'], train_data['labels'], params)
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
-    summary = evaluate(score_matrix, predictions, test_data['labels'])
-    # report_results(summary)
+    report_results(predictions, score_matrix, params['data']['data_path'], test_data['labels'])
 
 
 if __name__ == "__main__":
