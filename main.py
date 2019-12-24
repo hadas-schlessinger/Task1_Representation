@@ -51,7 +51,7 @@ def get_default_parameters():
                 'pickle_path': os.path.join(os.getcwd(), 'pickle'),
                 'pickle_train': 'train.pkl',
                 'pickle_test': 'test.pkl',
-                'first_run': True
+                'first_run': False
             }
     }
     return parms
@@ -109,7 +109,7 @@ def prepare(params, data):
     }
     for img in data['data']:
         img = cv2.resize(img, (params['prepare']['S'], params['prepare']['S']))
-        converted_image = hog(img, orientations=(params['prepare']['orientations']), pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
+        converted_image = hog(img, orientations=8,pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
                               cells_per_block=(params['prepare']['cells_per_block'], params['prepare']['cells_per_block']))
         ready_data['data'].append(converted_image)
     for label in data['labels']: ready_data['labels'].append(label)
@@ -188,7 +188,7 @@ def _create_labels(labels, current_class):
 
     fixed_labels = np.zeros((len(labels),))
     for i in range(len(labels)):
-        if (labels[i]==current_class):
+        if (labels[i] == current_class):
             fixed_labels[i] = 1
         else:
             fixed_labels[i] = -1
@@ -197,43 +197,74 @@ def _create_labels(labels, current_class):
 
 def _svm(hog_data, fixed_labels, training_params):
     # C-Support Vector Classification
-    svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'], gamma=training_params['gamma'], degree=training_params['degree'], probability=True)
-    model = svm.fit(hog_data, fixed_labels)  # train the data - fit the model per each class binary classifier
+    svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'], gamma=training_params['gamma'],
+                          degree=training_params['degree'], probability=True)
+    model = svm.fit(hog_data, fixed_labels)  # fit the model per each binary classifier
     return model
 
 
-def _m_classes_svm_train(hog_data, data_labels, params, class_indices):
+def _m_classes_svm_train(hog_data, data_labels, params):
     all_svms = []
-    for current_class in class_indices:
-        class_name = sorted(os.listdir(params['data']['data_path']), key=str.lower)[current_class-1] # extract the class name for matching the lables
+    for current_class in (params['data']['class_indices']):
+        class_name = sorted(os.listdir(params['data']['data_path']), key=str.lower)[current_class - 1]  # extract the class name for matching the lables
         fixed_labels = _create_labels(data_labels, class_name)  # appending -1 or 1 if the class matched
         all_svms.append(_svm(hog_data, fixed_labels, params['train']))
     return all_svms
 
 
-def _m_classes_predict(m_classes_svm):
-    # classesUniqueList = uniquelabels()  # creates a unique list of the classes
-    # numberOfImages = len(HOGTestdata)  # define the number of images
-    # predictions = []
-    # score_matrix = numpy.zeros((numberOfImages, len(classesUniqueList)))
-    # results_per_image = numpy.zeros((1, 10))  # results for 1 image - what is the probability for each class
-    # j = 0
-    # # for per each class and calc the prob for each image
-    # for j in range(len(classesUniqueList)):
-    #     proba = numpy.zeros((
-    #                         10,))  # for per each class and calc the probability for each image (what is the prob to be part of a class)
-    #     proba = n_models[j].predict_proba(HOGTestdata)
-    #     i = 0
-    #     for i in range(len(proba)):
-    #         score_matrix[i, j] = proba[i, 1]  # calc score matrix based on max proba
-    # y = 0
-    # for y in range(numberOfImages):
-    #     results_per_image = score_matrix[y, :]
-    #     # argmax is the calc by taking the argmax over the class score matrix columns
-    #     max = numpy.argmax(results_per_image)
-    #     predictions.append(classesUniqueList[max])  # find max argmax and put the lables of it in predictions
-    #
-    # return score_matrix, predictions
+def _m_classes_predict(hog_data, m_classes_svm, class_indices, data_path):
+    predictions = []
+    score_matrix = np.zeros((len(hog_data), len(class_indices)))
+    for current_class in range(len(class_indices)):
+        prob = m_classes_svm[current_class].predict_proba(hog_data)  # probability for an image to be in 1 of 2 classes
+        for sample in range(len(prob)):
+            score_matrix[sample, current_class] = prob[sample, 1]  # the score for sample i is to be from class 1 (j)
+    for y in range(len(hog_data)):
+        results_per_image = score_matrix[y, :] # takes all m probabilities for each sample
+        # find max probability and put the labels of it in predictions
+        predictions.append(sorted(os.listdir(data_path), key=str.lower)[class_indices[np.argmax(results_per_image)]-1])
+    return score_matrix, predictions
+
+
+def tuning(params, train):
+    train_data = prepare(params, train)
+    pass
+
+
+def train_model(train_data, data_labels, params):
+    return _m_classes_svm_train(train_data, data_labels, params)
+
+
+def test_model(test_data, trained_model, data_details):
+    return _m_classes_predict(test_data, trained_model, data_details['class_indices'], data_details['data_path'])
+
+
+def _evaluate(predictions, test_labels):
+    # Compute the results statistics - error rate and confusion matrix
+    error = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
+    return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
+
+
+def _calc_margins(score_matrix, test_lables):
+    classesUniqueList = uniquelabels()  # creates a unique list of the classes- real classes - test
+    margins = np.zeros((len(test_lables),))  # list of margins
+    i = 0
+    for i in range(len(labels_test)):
+        # loops the images and calculate - the image score for the real label minus the max score for this image
+        numbOfClass = numberOfClass(labels_test[i], classesUniqueList)
+        # number of class returns for an image the real class it belongs
+        # go to the probability and calc the score minus max in row
+        margins[i] = score_matrix[i, numbOfClass] - numpy.amax(
+            score_matrix[i, :])  # calc score matrix based on max proba
+        # marginsVector is a number-of-images vector represents the margin for each image
+    return margins
+
+
+def _list_worst_images(margins, data_path):
+    pass
+
+
+def _present_and_save_images(images):
     pass
 
 
@@ -247,11 +278,10 @@ def main():
     train, test = set_and_split_data(params)
     tuning(params, train)
     train_data = prepare(params, train)
-    trained_model = train_model(train_data['data'], train_data['labels'], params)
-    test_data = prepare(params,test)
-    # results = test(trained_model, test_data)
-    # summary = evaluate(results)
-    # report_results(summary)
+    test_data = prepare(params, test)
+    model = train_model(train_data['data'], train_data['labels'], params)
+    score_matrix, predictions = test_model(test_data['data'], model, params['data'])
+    report_results(predictions, score_matrix, params['data']['data_path'], test_data['labels'], params['data']['class_indices'])
 
 
 if __name__ == "__main__":
