@@ -188,11 +188,23 @@ def _evaluate(predictions, test_labels):
     error = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
     return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
+
 def _calc_margins(score_matrix, test_lables):
-    pass
+    classesUniqueList = uniquelabels()  # creates a unique list of the classes- real classes - test
+    margins = np.zeros((len(test_lables),))  # list of margins
+    i = 0
+    for i in range(len(labels_test)):
+        # loops the images and calculate - the image score for the real label minus the max score for this image
+        numbOfClass = numberOfClass(labels_test[i], classesUniqueList)
+        # number of class returns for an image the real class it belongs
+        # go to the probability and calc the score minus max in row
+        margins[i] = score_matrix[i, numbOfClass] - numpy.amax(
+            score_matrix[i, :])  # calc score matrix based on max proba
+        # marginsVector is a number-of-images vector represents the margin for each image
+    return margins
 
 
-def _list_wrost_images(margins, data_path):
+def _list_worst_images(margins, data_path):
     pass
 
 
@@ -201,7 +213,7 @@ def _present_and_save_images(images):
 
 
 
-def report_results(predictions, score_matrix, data_path, test_labels):
+def report_results(predictions, score_matrix, data_path, test_labels, class_indices):
     # print the error results and confusion matrix and error images
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
@@ -209,7 +221,7 @@ def report_results(predictions, score_matrix, data_path, test_labels):
     print(f'the error rate is: {error_rate}')
     print(f'the confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels)
-    worst_images = _list_wrost_images(margins, data_path)
+    worst_images = _list_worst_images(margins, data_path)
     _present_and_save_images(worst_images)
 
 
@@ -225,7 +237,7 @@ def main():
     test_data = prepare(params, test)
     model = train_model(train_data['data'], train_data['labels'], params)
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
-    report_results(predictions, score_matrix, params['data']['data_path'], test_data['labels'])
+    report_results(predictions, score_matrix, params['data']['data_path'], test_data['labels'], params['data']['class_indices'])
 
 
 if __name__ == "__main__":
