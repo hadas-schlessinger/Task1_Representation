@@ -189,17 +189,16 @@ def _evaluate(predictions, test_labels):
     return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
 
-def _calc_margins(score_matrix, test_lables):
+def _calc_margins(score_matrix, test_lables, ):
     classesUniqueList = uniquelabels()  # creates a unique list of the classes- real classes - test
     margins = np.zeros((len(test_lables),))  # list of margins
     i = 0
-    for i in range(len(labels_test)):
+    for i in range(len(test_lables)):
         # loops the images and calculate - the image score for the real label minus the max score for this image
-        numbOfClass = numberOfClass(labels_test[i], classesUniqueList)
+        num_of_classes = numberOfClass(labels_test[i], classesUniqueList)
         # number of class returns for an image the real class it belongs
         # go to the probability and calc the score minus max in row
-        margins[i] = score_matrix[i, numbOfClass] - numpy.amax(
-            score_matrix[i, :])  # calc score matrix based on max proba
+        margins[i] = score_matrix[i, num_of_classes] - np.amax(score_matrix[i, :])  # calc score matrix based on max proba
         # marginsVector is a number-of-images vector represents the margin for each image
     return margins
 
