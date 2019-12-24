@@ -184,8 +184,29 @@ def _m_classes_svm_train(hog_data, data_labels, params, class_indices):
 
 
 def _m_classes_predict(m_classes_svm):
+    # classesUniqueList = uniquelabels()  # creates a unique list of the classes
+    # numberOfImages = len(HOGTestdata)  # define the number of images
+    # predictions = []
+    # score_matrix = numpy.zeros((numberOfImages, len(classesUniqueList)))
+    # results_per_image = numpy.zeros((1, 10))  # results for 1 image - what is the probability for each class
+    # j = 0
+    # # for per each class and calc the prob for each image
+    # for j in range(len(classesUniqueList)):
+    #     proba = numpy.zeros((
+    #                         10,))  # for per each class and calc the probability for each image (what is the prob to be part of a class)
+    #     proba = n_models[j].predict_proba(HOGTestdata)
+    #     i = 0
+    #     for i in range(len(proba)):
+    #         score_matrix[i, j] = proba[i, 1]  # calc score matrix based on max proba
+    # y = 0
+    # for y in range(numberOfImages):
+    #     results_per_image = score_matrix[y, :]
+    #     # argmax is the calc by taking the argmax over the class score matrix columns
+    #     max = numpy.argmax(results_per_image)
+    #     predictions.append(classesUniqueList[max])  # find max argmax and put the lables of it in predictions
+    #
+    # return score_matrix, predictions
     pass
-
 
 
 
