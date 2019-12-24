@@ -46,7 +46,7 @@ def get_default_parameters():
             {
                 'c': 1,
                 'kernel': 'rbf',
-                'degree': 2
+                'degree': 1
 
             },
         'pickle':
@@ -128,19 +128,11 @@ def load_data(params, file_name):
 
 ####################### model #######################
 
-
-def train_model(train_data, data_labels, params):
-    # the functions implementing the actual learning algorithm and the classifier
-    m_classes_svm = _m_classes_svm_train(train_data, data_labels, params, params['data']['class_indices'])
-    results = _m_classes_predict(m_classes_svm)
-    return results
-
-
 def tuning(params, train):
     train_of_cross_val, test_of_cross_val, train_label, test_label = train_test_split(train['data'], train['labels'], train_size=0.7)
     tuning_error_per_set = []
     errors =[]
-    for kernel in ['rbf', 'poly', 'linear']:
+    for kernel in ['poly', 'linear', 'rbf']:
         params['train']['kernel'] = kernel
         for size in [100, 129, 150, 190, 220, 290, 300]:
             params['prepare']['S'] = size
@@ -151,9 +143,8 @@ def tuning(params, train):
                     params['prepare']['orientations_bins'] = orientations
                     hog_images_train = prepare(params, train_of_cross_val, train_label)
                     hog_images_test = prepare(params, test_of_cross_val, test_label)
-                    for c in [0.01, 0.1, 0.2, 0.3, 1, 10]:
+                    for c in [0.01, 0.1, 0.2, 0.3, 1, 3]:
                         params['train']['c'] = c
-                        degree = 1
                         if kernel == 'poly':
                             for degree in [2, 3, 4]:
                                 params['train']['degree'] = degree
@@ -163,7 +154,7 @@ def tuning(params, train):
                         score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
                         error_of_valid, matrix = _evaluate(predictions, hog_images_test['labels'])
                         print(f'this round parameters are {[kernel, size, pixels_per_cell, orientations, c, degree,  error_of_valid]}')
-                        tuning_error_per_set.append([kernel, size, pixels_per_cell, orientations, c, error_of_valid])
+                        tuning_error_per_set.append([kernel, size, pixels_per_cell, orientations, c, degree, error_of_valid])
                         errors.append(error_of_valid)
     print(tuning_error_per_set)
     print(errors)
@@ -253,14 +244,13 @@ def _list_worst_images(margins, img_path, number_of_img):
     num_of_images= 0
     for i in range(0, len(margins), number_of_img[current_class]):
         num_of_images = num_of_images + number_of_img[current_class]
-        worst_img_index= np.argmin(margins[i:num_of_images])
-        #val, = np.where(margins == worst_img_value)
-        error_images.append(img_path[worst_img_index]) if val[0] is not 0 else error_images.append("None")
+        worst_img_value= min(margins[i:num_of_images])
+        val, = np.where(margins == worst_img_value)
+        error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
         margins[val[0]] = 0
-        worst_img_index2 = np.argmin(margins[i:number_of_img[current_class]])
-        #val, = np.where(margins == worst_img_value2)
-        #error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
-        error_images.append(img_path[worst_img_index2]) if val[0] is not 0 else error_images.append("None")
+        worst_img_value2 = min(margins[i:num_of_images])
+        val, = np.where(margins == worst_img_value2)
+        error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
         current_class = current_class+1
     return error_images
 
@@ -274,11 +264,11 @@ def report_results(predictions, score_matrix, data_path, test_labels, img_path, 
     print(f'error rate is: {error_rate*100} %')
     print(f'confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels, data_path)
-    #worst_images = _list_worst_images(margins, img_path, number_of_img)
-    # _present_and_save_images(worst_images)
+    worst_images = _list_worst_images(margins, img_path, number_of_img)
+    _present_and_save_images(worst_images)
+
 
 ################# main ####################
-
 
 def main():
     params = get_default_parameters()   # (experiment specific parameters override)
