@@ -11,6 +11,7 @@ import sklearn.svm
 from matplotlib import pyplot as plt
 from skimage.feature import hog
 from sklearn.model_selection import train_test_split
+import pandas as pd
 
 
 ####################### data preparation #######################
@@ -37,7 +38,7 @@ def get_default_parameters():
         'prepare':
             {
                 'pixels_per_cell': 20,
-                'cells_per_block': 10,
+                'cells_per_block': 1,
                 'orientations_bins': 4,
                 'S': 200
             },
@@ -45,7 +46,6 @@ def get_default_parameters():
             {
                 'c': 1,
                 'kernel': 'rbf',
-                'gamma': 'scale',
                 'degree': 2
 
             },
@@ -90,7 +90,7 @@ def _extract__images_from_folders(data_details):
                     test_counter = test_counter + 1
                 else:
                     break
-        data_details['number_of test_img'].append(test_counter)
+        data_details['number_of_test_img'].append(test_counter)
     return fixed_train_data, fixed_test_data
 
 
@@ -106,18 +106,19 @@ def set_and_split_data(parms):
     return load_data(parms, parms['pickle']['pickle_train']), load_data(parms, parms['pickle']['pickle_test'])
 
 
-def prepare(params, data):
+def prepare(params, data, labels):
     # Compute the representation function: Turn the images into vectors for classification
     ready_data = {
         'data': [],
         'labels': []
     }
-    for img in data['data']:
+    for img in data:
         img = cv2.resize(img, (params['prepare']['S'], params['prepare']['S']))
-        converted_image = hog(img, orientations= params['prepare']['number_of_bins'], pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
-                              cells_per_block=(params['prepare'] ['cells_per_block'], params['prepare']['cells_per_block']))
+        converted_image = hog(img, orientations=params['prepare']['orientations_bins'],
+                              pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
+                              cells_per_block=(params['prepare']['cells_per_block'], params['prepare']['cells_per_block']))
         ready_data['data'].append(converted_image)
-    for label in data['labels']: ready_data['labels'].append(label)
+    for label in labels: ready_data['labels'].append(label)
     return ready_data
 
 
@@ -135,33 +136,42 @@ def train_model(train_data, data_labels, params):
     return results
 
 
-def tuning(params,train):
-    train_of_cross_val, test_of_cross_val = train_test_split(train['data'], train['labels'], train_size=0.7)
+def tuning(params, train):
+    train_of_cross_val, test_of_cross_val, train_label, test_label = train_test_split(train['data'], train['labels'], train_size=0.7)
     tuning_error_per_set = []
-    for kernel in ['linear', 'rbf', 'poly']:
-        params['prepare']['kernel'] = kernel
+    errors =[]
+    for kernel in ['rbf', 'poly', 'linear']:
+        params['train']['kernel'] = kernel
         for size in [100, 129, 150, 190, 220, 290, 300]:
             params['prepare']['S'] = size
             for pixels_per_cell in [8, 16, 32, 64]:
                 params['prepare']['pixels_per_cell'] = pixels_per_cell
-                for cells_per_block in range(2, 6, 1):
-                    params['prepare']['cells_per_block'] = cells_per_block
-                    for orientations in range(4,10,1):
-                        params['prepare']['orientations_bins'] = orientations
-                        hog_images_train = prepare(params, train_of_cross_val)
-                        hog_images_test = prepare(params, test_of_cross_val)
-                        for c in [0.01, 0.1, 0.2, 0.3, 1, 10]:
-                            params['prepare']['c'] = c
-                            if kernel == 'poly':
-                                for degree in [2, 3, 4]:
-                                    params['prepare']['degree'] = degree
-                                    trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
-                            else:
+                #for cells_per_block in range(2, 6, 1):
+                for orientations in range(4, 10, 1):
+                    params['prepare']['orientations_bins'] = orientations
+                    hog_images_train = prepare(params, train_of_cross_val, train_label)
+                    hog_images_test = prepare(params, test_of_cross_val, test_label)
+                    for c in [0.01, 0.1, 0.2, 0.3, 1, 10]:
+                        params['train']['c'] = c
+                        degree = 1
+                        if kernel == 'poly':
+                            for degree in [2, 3, 4]:
+                                params['train']['degree'] = degree
                                 trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
-                            score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
-                            error_of_valid, matrix = _evaluate(predictions, hog_images_test['labels'])
-                            tuning_error_per_set.append(kernel, size, pixels_per_cell, orientations, c, error_of_valid)
-    return tuning_error_per_set
+                        else:
+                            trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
+                        score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
+                        error_of_valid, matrix = _evaluate(predictions, hog_images_test['labels'])
+                        print(f'this round parameters are {[kernel, size, pixels_per_cell, orientations, c, degree,  error_of_valid]}')
+                        tuning_error_per_set.append([kernel, size, pixels_per_cell, orientations, c, error_of_valid])
+                        errors.append(error_of_valid)
+    print(tuning_error_per_set)
+    print(errors)
+
+    writer = pd.ExcelWriter(os.path.join(params['pickle']['pickle_path'], 'excell'))
+    tuning_error_per_set.to_excel(writer, 'df')
+    writer.save()
+    return tuning_error_per_set, errors
 
 
 def _create_labels(labels, current_class):
@@ -181,7 +191,7 @@ def _create_labels(labels, current_class):
 
 def _svm(hog_data, fixed_labels, training_params):
     # C-Support Vector Classification
-    svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'], gamma=training_params['gamma'],
+    svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'],
                           degree=training_params['degree'], probability=True)
     model = svm.fit(hog_data, fixed_labels)  # fit the model per each binary classifier
     return model
@@ -220,8 +230,8 @@ def test_model(test_data, trained_model, data_details):
 
 def _evaluate(predictions, test_labels):
     # Compute the results statistics - error rate and confusion matrix
-    error = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
-    return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
+    correct = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
+    return (1 - (correct/len(test_labels))), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
 
 def _calc_margins(score_matrix, test_labels, data_path):
@@ -240,25 +250,18 @@ def _list_worst_images(margins, img_path, number_of_img):
     val = 0
     error_images = []
     current_class = 0
+    num_of_images= 0
     for i in range(0, len(margins), number_of_img[current_class]):
-        worst_img_value = min(margins[i:number_of_img[current_class]])
-        val, = np.where(margins == worst_img_value)
-        value = val[0]
-        if (value != 0):
-            error_images.append(img_path[value])
-
-        else:
-            error_images.append("None")
-
-        margins[value] = 0
-        # maximum2 = min(Margins[i:numberOfims])
-        # val, = numpy.where(Margins == maximum2)
-        # value = val[0]
-        # if (value != 0):
-        #     imagesErrorClasses.append(list_of_pathes[value])
-        # else:
-        #     imagesErrorClasses.append("None")
-        numberOfims = numberOfims + 20
+        num_of_images = num_of_images + number_of_img[current_class]
+        worst_img_index= np.argmin(margins[i:num_of_images])
+        #val, = np.where(margins == worst_img_value)
+        error_images.append(img_path[worst_img_index]) if val[0] is not 0 else error_images.append("None")
+        margins[val[0]] = 0
+        worst_img_index2 = np.argmin(margins[i:number_of_img[current_class]])
+        #val, = np.where(margins == worst_img_value2)
+        #error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
+        error_images.append(img_path[worst_img_index2]) if val[0] is not 0 else error_images.append("None")
+        current_class = current_class+1
     return error_images
 
 
@@ -271,7 +274,7 @@ def report_results(predictions, score_matrix, data_path, test_labels, img_path, 
     print(f'error rate is: {error_rate*100} %')
     print(f'confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels, data_path)
-    worst_images = _list_worst_images(margins, img_path, number_of_img)
+    #worst_images = _list_worst_images(margins, img_path, number_of_img)
     # _present_and_save_images(worst_images)
 
 ################# main ####################
@@ -281,9 +284,13 @@ def main():
     params = get_default_parameters()   # (experiment specific parameters override)
     np.random.seed(0)  # seed
     train, test = set_and_split_data(params)
-    tuning(params, train)
-    train_data = prepare(params, train)
-    test_data = prepare(params, test)
+    params, errors = tuning(params, train)
+    chosen_params = params(min(errors).index())
+    ba = params(np.argmin(errors))
+    print(f'chosen {chosen_params}')
+    print(f'back up: {ba}')
+    train_data = prepare(params, train['data'], train['labels'])
+    test_data = prepare(params, test['data'], test['labels'])
     model = train_model(train_data['data'], train_data['labels'], params)
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
     report_results(predictions, score_matrix, params['data']['data_path'],
