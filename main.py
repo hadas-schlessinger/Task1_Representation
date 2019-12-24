@@ -26,6 +26,8 @@ def get_default_parameters():
         'data':
             {
                 'data_path': os.path.join(os.getcwd(), '101_ObjectCategories'),
+                'image_path': [],
+                'number_of_test_img': [],
                 'class_indices': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 'results_path': os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
                 'results_file_name': 'results.pkl',
@@ -51,7 +53,7 @@ def get_default_parameters():
                 'pickle_path': os.path.join(os.getcwd(), 'pickle'),
                 'pickle_train': 'train.pkl',
                 'pickle_test': 'test.pkl',
-                'first_run': False
+                'first_run': True
             }
     }
     return parms
@@ -81,11 +83,13 @@ def _extract__images_from_folders(data_details):
                 train_counter = train_counter + 1
             else:
                 if file.endswith('.jpg') and test_counter < data_details['train_test_size']:
+                    data_details['image_path'].append(os.path.join(data_details['data_path'], class_name, file))
                     fixed_test_data['data'].append(image)
                     fixed_test_data['labels'].append(class_name)
                     test_counter = test_counter + 1
                 else:
                     break
+        data_details['number_of test_img'].append(test_counter)
     return fixed_train_data, fixed_test_data
 
 
@@ -109,7 +113,7 @@ def prepare(params, data):
     }
     for img in data['data']:
         img = cv2.resize(img, (params['prepare']['S'], params['prepare']['S']))
-        converted_image = hog(img, orientations=8,pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
+        converted_image = hog(img, orientations=8, pixels_per_cell=(params['prepare']['pixels_per_cell'], params['prepare']['pixels_per_cell']),
                               cells_per_block=(params['prepare']['cells_per_block'], params['prepare']['cells_per_block']))
         ready_data['data'].append(converted_image)
     for label in data['labels']: ready_data['labels'].append(label)
@@ -123,62 +127,38 @@ def load_data(params, file_name):
 ####################### model #######################
 
 
-def train_model(train_data, data_labels, params):
-    # the functions implementing the actual learning algorithm and the classifier
-    m_classes_svm = _m_classes_svm_train(train_data, data_labels, params, params['data']['class_indices'])
-    results = _m_classes_predict(m_classes_svm)
-    return results
-
-
 def tuning(params,train):
 
-    image_size = [100, 129, 150, 190, 220, 290, 300]
-    pixels_per_cell = [8, 16, 32, 64]
-    c_params = [0.01, 0.1, 0.2, 0.3, 1, 10]
-    degree_params = [2,3,4]
-    train_of_cross_val, test_of_cross_val = train_test_split(train['data'], train['labels'], train_size=0.7)
-    kernel_type =['linear', 'rbf', 'poly']
-    hog_cells_per_block = [1]
-    tests = []
-
-    for k in kernel_type:
-        params['prepare']['kernel'] = k
-            for s in image_size:
-                params['prepare']['S'] = s
-                    for pixels_per_cell in hog_pixels_per_cell:
-                        params['prepare']['pixels_per_cell'] = pixels_per_cell
-                        for cells_per_block in hog_cells_per_block:
-                            params['prepare']['cells_per_block'] = cells_per_block
-                            hog_images_train = prepare(params, train_of_cross_val)
-                            hog_images_test = prepare(params, test_of_cross_val)
-                            for c in c_params:
-                                params['prepare']['c'] = c
-                                if k == 'poly':
-                                    for degree in degree_params:
-                                        params['prepare']['degree'] = degree
-                                        trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
-                                else:
-                                    trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
-                                results = test(trained_model, test_of_cross_val)
-                                summary = evaluate(results)
-
-def test(trained_model, test_data_rep):
+    # image_size = [100, 129, 150, 190, 220, 290, 300]
+    # pixels_per_cell = [8, 16, 32, 64]
+    # c_params = [0.01, 0.1, 0.2, 0.3, 1, 10]
+    # degree_params = [2,3,4]
+    # train_of_cross_val, test_of_cross_val = train_test_split(train['data'], train['labels'], train_size=0.7)
+    # kernel_type =['linear', 'rbf', 'poly']
+    # hog_cells_per_block = [1]
+    # tests = []
+    #
+    # for k in kernel_type:
+    #     params['prepare']['kernel'] = k
+    #         for s in image_size:
+    #             params['prepare']['S'] = s
+    #                 for pixels_per_cell in hog_pixels_per_cell:
+    #                     params['prepare']['pixels_per_cell'] = pixels_per_cell
+    #                     for cells_per_block in hog_cells_per_block:
+    #                         params['prepare']['cells_per_block'] = cells_per_block
+    #                         hog_images_train = prepare(params, train_of_cross_val)
+    #                         hog_images_test = prepare(params, test_of_cross_val)
+    #                         for c in c_params:
+    #                             params['prepare']['c'] = c
+    #                             if k == 'poly':
+    #                                 for degree in degree_params:
+    #                                     params['prepare']['degree'] = degree
+    #                                     trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
+    #                             else:
+    #                                 trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
+    #                             results = test(trained_model, test_of_cross_val)
+    #                             summary = evaluate(results)
     pass
-
-
-def evaluate(results,split_data, params):
-    # Compute the results statistics and return them as fields of Summary For classification these are:
-    # Most important: the error rate In our case also:
-    # Confusion matrix, the indices of the largest error images
-    pass
-
-
-def report_results(summary, params):
-    # print the error results and confusion matrix and error images
-    # Draws the results figures, reports results to the screen
-    # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
-    return True
-
 
 def _create_labels(labels, current_class):
     '''
@@ -226,11 +206,6 @@ def _m_classes_predict(hog_data, m_classes_svm, class_indices, data_path):
     return score_matrix, predictions
 
 
-def tuning(params, train):
-    train_data = prepare(params, train)
-    pass
-
-
 def train_model(train_data, data_labels, params):
     return _m_classes_svm_train(train_data, data_labels, params)
 
@@ -245,28 +220,55 @@ def _evaluate(predictions, test_labels):
     return error / len(test_labels), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
 
-def _calc_margins(score_matrix, test_lables, ):
-    classesUniqueList = uniquelabels()  # creates a unique list of the classes- real classes - test
-    margins = np.zeros((len(test_lables),))  # list of margins
-    i = 0
-    for i in range(len(test_lables)):
-        # loops the images and calculate - the image score for the real label minus the max score for this image
-        num_of_classes = numberOfClass(labels_test[i], classesUniqueList)
-        # number of class returns for an image the real class it belongs
-        # go to the probability and calc the score minus max in row
-        margins[i] = score_matrix[i, num_of_classes] - np.amax(score_matrix[i, :])  # calc score matrix based on max proba
-        # marginsVector is a number-of-images vector represents the margin for each image
+def _calc_margins(score_matrix, test_labels, data_path):
+    '''
+        the function calcs the gap for each image by:
+        margin = real class prob score - the max score for the image
+        the max score for the image represent the predictive class
+    '''
+    margins = np.zeros((len(test_labels),))  # list of margins
+    for i in range(len(test_labels)):
+        margins[i] = score_matrix[i, sorted(os.listdir(data_path), key=str.lower).index(test_labels[i])] - np.amax(score_matrix[i, :])
     return margins
 
 
-def _list_worst_images(margins, data_path):
-    pass
+def _list_worst_images(margins, img_path, number_of_img):
+    val = 0
+    error_images = []
+    current_class = 0
+    for i in range(0, len(margins), number_of_img[current_class]):
+        worst_img_value = min(margins[i:number_of_img[current_class]])
+        val, = np.where(margins == worst_img_value)
+        value = val[0]
+        if (value != 0):
+            error_images.append(img_path[value])
+
+        else:
+            error_images.append("None")
+
+        margins[value] = 0
+        # maximum2 = min(Margins[i:numberOfims])
+        # val, = numpy.where(Margins == maximum2)
+        # value = val[0]
+        # if (value != 0):
+        #     imagesErrorClasses.append(list_of_pathes[value])
+        # else:
+        #     imagesErrorClasses.append("None")
+        numberOfims = numberOfims + 20
+    return error_images
 
 
 def _present_and_save_images(images):
     pass
 
 
+def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img):
+    error_rate, confusion_matrix = _evaluate(predictions, test_labels)
+    print(f'error rate is: {error_rate*100} %')
+    print(f'confusion_matrix is: {confusion_matrix}')
+    margins = _calc_margins(score_matrix, test_labels, data_path)
+    worst_images = _list_worst_images(margins, img_path, number_of_img)
+    # _present_and_save_images(worst_images)
 
 ################# main ####################
 
@@ -280,7 +282,8 @@ def main():
     test_data = prepare(params, test)
     model = train_model(train_data['data'], train_data['labels'], params)
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
-    report_results(predictions, score_matrix, params['data']['data_path'], test_data['labels'], params['data']['class_indices'])
+    report_results(predictions, score_matrix, params['data']['data_path'],
+                   test_data['labels'], params['data']['image_path'], params['data']['number_of_test_img'])
 
 
 if __name__ == "__main__":
