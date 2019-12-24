@@ -129,35 +129,6 @@ def load_data(params, file_name):
 
 def tuning(params,train):
 
-    # image_size = [100, 129, 150, 190, 220, 290, 300]
-    # pixels_per_cell = [8, 16, 32, 64]
-    # c_params = [0.01, 0.1, 0.2, 0.3, 1, 10]
-    # degree_params = [2,3,4]
-    # train_of_cross_val, test_of_cross_val = train_test_split(train['data'], train['labels'], train_size=0.7)
-    # kernel_type =['linear', 'rbf', 'poly']
-    # hog_cells_per_block = [1]
-    # tests = []
-    #
-    # for k in kernel_type:
-    #     params['prepare']['kernel'] = k
-    #         for s in image_size:
-    #             params['prepare']['S'] = s
-    #                 for pixels_per_cell in hog_pixels_per_cell:
-    #                     params['prepare']['pixels_per_cell'] = pixels_per_cell
-    #                     for cells_per_block in hog_cells_per_block:
-    #                         params['prepare']['cells_per_block'] = cells_per_block
-    #                         hog_images_train = prepare(params, train_of_cross_val)
-    #                         hog_images_test = prepare(params, test_of_cross_val)
-    #                         for c in c_params:
-    #                             params['prepare']['c'] = c
-    #                             if k == 'poly':
-    #                                 for degree in degree_params:
-    #                                     params['prepare']['degree'] = degree
-    #                                     trained_model = train_model(hog_images_train['data'],hog_images_train['labels'],params)
-    #                             else:
-    #                                 trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
-    #                             results = test(trained_model, test_of_cross_val)
-    #                             summary = evaluate(results)
     pass
 
 def _create_labels(labels, current_class):
