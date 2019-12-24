@@ -248,12 +248,19 @@ def _list_worst_images(margins, img_path, number_of_img):
     return error_images
 
 
-def _present_and_save_images(list_of_2_worst_images):
+def _present_and_save_images(list_of_2_worst_images,class_indices,data_path):
     f = 0
     for i in range(len(list_of_2_worst_images)):
+        if (i % 2) != 0:
+            counter_per_class = 0
         if list_of_2_worst_images[i] != 'None':
             image = cv2.imread(list_of_2_worst_images[i])  # image read
             plt.imshow(image, cmap='gray', interpolation='bicubic')
+        else:
+            counter_per_class =counter_per_class + 1
+        if counter_per_class == 2:
+            test_labels
+            print('that there were no errors for the class', class_name)
 
 
 def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img):
@@ -262,7 +269,8 @@ def report_results(predictions, score_matrix, data_path, test_labels, img_path, 
     print(f'confusion_matrix is: {confusion_matrix}')
     margins = _calc_margins(score_matrix, test_labels, data_path)
     worst_images = _list_worst_images(margins, img_path, number_of_img)
-    _present_and_save_images(worst_images)
+    _present_and_save_images(worst_images, ,number_of_img)
+
 
 
 
