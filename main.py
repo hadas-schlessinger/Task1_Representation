@@ -122,11 +122,6 @@ def load_data(params, file_name):
 ####################### model #######################
 
 
-def train_model(train_data, data_labels, params):
-    # the functions implementing the actual learning algorithm and the classifier
-    m_classes_svm = _m_classes_svm_train(train_data, data_labels, params, params['data']['class_indices'])
-    results = _m_classes_predict(train_data, m_classes_svm, params['data']['class_indices'], params['data']['data_path'])
-    return results
 
 
 def _create_labels(labels, current_class):
@@ -148,15 +143,14 @@ def _svm(hog_data, fixed_labels, training_params):
     # C-Support Vector Classification
     svm = sklearn.svm.SVC(kernel=training_params['kernel'], C=training_params['c'], gamma=training_params['gamma'],
                           degree=training_params['degree'], probability=True)
-    model = svm.fit(hog_data, fixed_labels)  # train the data - fit the model per each class binary classifier
+    model = svm.fit(hog_data, fixed_labels)  # fit the model per each binary classifier
     return model
 
 
-def _m_classes_svm_train(hog_data, data_labels, params, class_indices):
+def _m_classes_svm_train(hog_data, data_labels, params):
     all_svms = []
-    for current_class in class_indices:
-        class_name = sorted(os.listdir(params['data']['data_path']), key=str.lower)[
-            current_class - 1]  # extract the class name for matching the lables
+    for current_class in (params['data']['class_indices']):
+        class_name = sorted(os.listdir(params['data']['data_path']), key=str.lower)[current_class - 1]  # extract the class name for matching the lables
         fixed_labels = _create_labels(data_labels, class_name)  # appending -1 or 1 if the class matched
         all_svms.append(_svm(hog_data, fixed_labels, params['train']))
     return all_svms
@@ -181,15 +175,25 @@ def tuning(params, train):
     pass
 
 
-def test(trained_model, test_data_rep):
-    pass
+def train_model(train_data, data_labels, params):
+    return _m_classes_svm_train(train_data, data_labels, params)
 
 
-def evaluate(results,split_data, params):
-    # Compute the results statistics and return them as fields of Summary For classification these are:
-    # Most important: the error rate In our case also:
-    # Confusion matrix, the indices of the largest error images
-    pass
+def test_model(test_data, trained_model, data_details):
+    return _m_classes_predict(test_data, trained_model, data_details['class_indices'], data_details['data_path'])
+
+
+def evaluate(score_matrix, predictions, test_labels):
+    # Compute the results statistics - error rate and confusion matrix
+    confusion_matrix = sklearn.metrics.confusion_matrix(test_labels, predictions)
+    # i = 0
+    # error = 0
+    # for i in range(len(predictions)):
+    #     if (predictions[i] != labels_test[i]):  # counts the number of unmatched true label array to prediction array
+    #         error = error + 1
+    #
+    # error_rate = error / len(labels_test)
+    return error_rate, confusion_matrix
 
 
 def report_results(summary, params):
@@ -197,7 +201,6 @@ def report_results(summary, params):
     # Draws the results figures, reports results to the screen
     # Saves the results to the results path, to a file named according to the experiment name or number (e.g. to Results\ResultsOfExp_xx.pkl)
     return True
-
 
 
 ################# main ####################
@@ -209,11 +212,10 @@ def main():
     train, test = set_and_split_data(params)
 #   tuning(train)
     train_data = prepare(params, train)
-    trained_model = train_model(train_data['data'], train_data['labels'], params)
-    print(trained_model)
-    test_data = prepare(params,test)
-    results = test(trained_model, test_data)
-    # summary = evaluate(results)
+    test_data = prepare(params, test)
+    model = train_model(train_data['data'], train_data['labels'], params)
+    score_matrix, predictions = test_model(test_data['data'], model, params['data'])
+    summary = evaluate(score_matrix, predictions, test_data['labels'])
     # report_results(summary)
 
 
