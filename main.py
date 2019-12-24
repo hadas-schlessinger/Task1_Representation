@@ -46,7 +46,7 @@ def get_default_parameters():
             {
                 'c': 1,
                 'kernel': 'rbf',
-                'degree': 1
+                'degree': 3
 
             },
         'pickle':
@@ -132,9 +132,9 @@ def tuning(params, train):
     train_of_cross_val, test_of_cross_val, train_label, test_label = train_test_split(train['data'], train['labels'], train_size=0.7)
     tuning_error_per_set = []
     errors =[]
-    for kernel in ['poly', 'linear', 'rbf']:
+    for kernel in ['linear', 'rbf', 'poly']:
         params['train']['kernel'] = kernel
-        for size in [100, 129, 150, 190, 220, 290, 300]:
+        for size in [100, 129, 150, 196, 256]:
             params['prepare']['S'] = size
             for pixels_per_cell in [8, 16, 32, 64]:
                 params['prepare']['pixels_per_cell'] = pixels_per_cell
@@ -145,20 +145,14 @@ def tuning(params, train):
                     hog_images_test = prepare(params, test_of_cross_val, test_label)
                     for c in [0.01, 0.1, 0.2, 0.3, 1, 3]:
                         params['train']['c'] = c
-                        if kernel == 'poly':
-                            for degree in [2, 3, 4]:
-                                params['train']['degree'] = degree
-                                trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
-                        else:
-                            trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
+                        trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
                         score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
                         error_of_valid, matrix = _evaluate(predictions, hog_images_test['labels'])
-                        print(f'this round parameters are {[kernel, size, pixels_per_cell, orientations, c, degree,  error_of_valid]}')
-                        tuning_error_per_set.append([kernel, size, pixels_per_cell, orientations, c, degree, error_of_valid])
+                        print(f'this round parameters are {[kernel, size, pixels_per_cell, orientations, c,  error_of_valid]}')
+                        tuning_error_per_set.append([kernel, size, pixels_per_cell, orientations, c, error_of_valid])
                         errors.append(error_of_valid)
     print(tuning_error_per_set)
-    print(errors)
-
+    tuning_error_per_set=pd.Series(tuning_error_per_set, name='value').to_frame()
     writer = pd.ExcelWriter(os.path.join(params['pickle']['pickle_path'], 'excell'))
     tuning_error_per_set.to_excel(writer, 'df')
     writer.save()
@@ -238,7 +232,6 @@ def _calc_margins(score_matrix, test_labels, data_path):
 
 
 def _list_worst_images(margins, img_path, number_of_img):
-    val = 0
     error_images = []
     current_class = 0
     num_of_images= 0
@@ -246,11 +239,11 @@ def _list_worst_images(margins, img_path, number_of_img):
         num_of_images = num_of_images + number_of_img[current_class]
         worst_img_value= min(margins[i:num_of_images])
         val, = np.where(margins == worst_img_value)
-        error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
+        error_images.append(img_path[val[0]]) if val[0] != 0 else error_images.append("None")
         margins[val[0]] = 0
         worst_img_value2 = min(margins[i:num_of_images])
         val, = np.where(margins == worst_img_value2)
-        error_images.append(img_path[val[0]]) if val[0] is not 0 else error_images.append("None")
+        error_images.append(img_path[val[0]]) if val[0] != 0 else error_images.append("None")
         current_class = current_class+1
     return error_images
 
@@ -270,11 +263,7 @@ def report_results(predictions, score_matrix, data_path, test_labels, img_path, 
     margins = _calc_margins(score_matrix, test_labels, data_path)
     worst_images = _list_worst_images(margins, img_path, number_of_img)
     _present_and_save_images(worst_images)
-<<<<<<< HEAD
-=======
-    #worst_images = _list_worst_images(margins, img_path, number_of_img)
-    # _present_and_save_images(worst_images)
->>>>>>> dd7a225e9321ba053fb56bed2f3cc17ff7af34bc
+
 
 
 ################# main ####################
@@ -294,41 +283,7 @@ def main():
     score_matrix, predictions = test_model(test_data['data'], model, params['data'])
     report_results(predictions, score_matrix, params['data']['data_path'],
                    test_data['labels'], params['data']['image_path'], params['data']['number_of_test_img'])
-    """
-    #### for graph C VS ERROR:
-    cParams = np.arange(0.01, 1, 0.01)
-    sParams = [100]
-    hog_orientations = [8]
-    hog_pixels_per_cell = [16]
-    hog_cells_per_block = [1]
-    """
 
-    """
-    #### for graph S VS ERROR:
-    cParams = [0.01]
-    sParams = np.arange(100, 500, 10)
-    hog_orientations = [8]
-    hog_pixels_per_cell = [16]
-    hog_cells_per_block = [1]
-    """
-
-    """
-    #### for graph Orientation VS ERROR:
-    cParams = [0.01]
-    sParams = [100]
-    hog_orientations = np.arange(8, 180, 1)
-    hog_pixels_per_cell = [16]
-    hog_cells_per_block = [1]
-    """
-
-    """
-    #### for graph PPC VS ERROR:
-    cParams = [0.01]
-    sParams = [100]
-    hog_orientations = [8]
-    hog_pixels_per_cell = [8, 16, 32, 64]
-    hog_cells_per_block = [1]
-    """
 
 if __name__ == "__main__":
     main()
