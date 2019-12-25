@@ -29,9 +29,7 @@ def get_default_parameters():
                 'data_path': os.path.join(os.getcwd(), '101_ObjectCategories'),
                 'image_path': [],
                 'number_of_test_img': [],
-                'class_indices': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                'results_path': os.path.join(os.getcwd(), 'Task1_Representation', 'Results'),
-                'results_file_name': 'results.pkl',
+                'class_indices': [1, 2, 3, 4, 5, 6, 7, 8 ,9, 10],
                 'train_test_size': 20,
                 'tuning_size': 10
             },
@@ -39,13 +37,13 @@ def get_default_parameters():
             {
                 'pixels_per_cell': 16,
                 'cells_per_block': 1,
-                'orientations_bins': 16,
-                'S': 100
+                'orientations_bins': 14,
+                'S': 196
             },
         'train':
             {
-                'c': 1,
-                'kernel': 'rbf',
+                'c': 0.01,
+                'kernel': 'linear',
                 'degree': 3
 
             },
@@ -136,14 +134,14 @@ def tuning(params, train):
         params['train']['kernel'] = kernel
         for size in [100, 129, 150, 196, 256]:
             params['prepare']['S'] = size
-            for pixels_per_cell in [8, 16, 32, 64]:
+            for pixels_per_cell in [4, 8, 16, 32, 64]:
                 params['prepare']['pixels_per_cell'] = pixels_per_cell
                 #for cells_per_block in range(2, 6, 1):
-                for orientations in range(4, 16, 2):
+                for orientations in range(8, 30, 2):
                     params['prepare']['orientations_bins'] = orientations
                     hog_images_train = prepare(params, train_of_cross_val, train_label)
                     hog_images_test = prepare(params, test_of_cross_val, test_label)
-                    for c in [0.01, 0.1, 0.2, 0.3, 1, 3]:
+                    for c in [0.001, 0.01, 0.1, 0.5, 1, 10, 50, 100]:
                         params['train']['c'] = c
                         trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
                         score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
@@ -215,11 +213,14 @@ def test_model(test_data, trained_model, data_details):
 
 def _evaluate(predictions, test_labels):
     # Compute the results statistics - error rate and confusion matrix
-    correct = sum(1 for predict, real in zip(predictions, test_labels) if predict == real)
-    return (1 - (correct/len(test_labels))), sklearn.metrics.confusion_matrix(test_labels, predictions)
+    error = sum(1 for predict, real in zip(predictions, test_labels) if predict != real)
+    return (error/len(test_labels)), sklearn.metrics.confusion_matrix(test_labels, predictions)
 
 
-def _calc_margins(score_matrix, test_labels, data_path):
+def _class_index(class_number, class_indices):
+    return class_indices.index(class_number)
+
+def _calc_margins(score_matrix, test_labels, data_path, class_indices):
     '''
         the function calcs the gap for each image by:
         margin = real class prob score - the max score for the image
@@ -227,7 +228,8 @@ def _calc_margins(score_matrix, test_labels, data_path):
     '''
     margins = np.zeros((len(test_labels),))  # list of margins
     for i in range(len(test_labels)):
-        margins[i] = score_matrix[i, sorted(os.listdir(data_path), key=str.lower).index(test_labels[i])] - np.amax(score_matrix[i, :])
+        class_number = sorted(os.listdir(data_path), key=str.lower).index(test_labels[i])
+        margins[i] = score_matrix[i, _class_index(class_number+1, class_indices)] - np.amax(score_matrix[i, :])
     return margins
 
 
@@ -261,11 +263,11 @@ def _present_and_save_images(list_of_2_worst_images, class_indices, data_path):
                     print(f'There were no errors for the class: {class_name}')
 
 
-def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img,class_indices):
+def report_results(predictions, score_matrix, data_path, test_labels, img_path, number_of_img, class_indices):
     error_rate, confusion_matrix = _evaluate(predictions, test_labels)
     print(f'error rate is: {error_rate*100} %')
-    print(f'confusion_matrix is: {confusion_matrix}')
-    margins = _calc_margins(score_matrix, test_labels, data_path)
+    print(f'confusion_matrix is:\n {confusion_matrix}')
+    margins = _calc_margins(score_matrix, test_labels, data_path, class_indices)
     worst_images = _list_worst_images(margins, img_path, number_of_img)
     _present_and_save_images(worst_images,class_indices,data_path)
 
@@ -278,10 +280,8 @@ def main():
     np.random.seed(0)  # seed
     train, test = set_and_split_data(params)
     params, errors = tuning(params, train)
-    chosen_params = params(np.argmin(errors))
-    ba = params(np.argmin(errors))
-    print(f'chosen {chosen_params}')
-    print(f'back up: {ba}')
+    # chosen_params = params[np.argmin(list(errors))]
+    # print(f'chosen {chosen_params}')
     train_data = prepare(params, train['data'], train['labels'])
     test_data = prepare(params, test['data'], test['labels'])
     model = train_model(train_data['data'], train_data['labels'], params)
