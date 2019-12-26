@@ -35,7 +35,7 @@ def get_default_parameters():
         'prepare':
             {
                 'pixels_per_cell': 16,
-                'cells_per_block': 1,
+                'cells_per_block': 3,
                 'orientations_bins': 14,
                 'S': 196
             },
@@ -185,6 +185,26 @@ def tuning(params, train):
     writer.save()
     return tuning_error_per_set, errors
 
+def tuning_blocks(params, train):
+    train_of_cross_val, test_of_cross_val, train_label, test_label = train_test_split(train['data'], train['labels'],                                                                          train_size=0.7)
+    tuning_error_per_set = []
+    errors = []
+    for block_size in range(1,7,1):
+        params['prepare']['cells_per_block'] = block_size
+        hog_images_train = prepare(params, train_of_cross_val, train_label)
+        hog_images_test = prepare(params, test_of_cross_val, test_label)
+        trained_model = train_model(hog_images_train['data'], hog_images_train['labels'], params)
+        score, predictions = test_model(hog_images_test['data'], trained_model, params['data'])
+        error_of_valid, matrix = _evaluate(predictions, hog_images_test['labels'])
+        print(f'this round block size is {[block_size, error_of_valid]}')
+        tuning_error_per_set.append([block_size, error_of_valid])
+        errors.append(error_of_valid)
+    # excel writing
+    tuning_error_per_set = pd.Series(tuning_error_per_set, name='value').to_frame()
+    writer = pd.ExcelWriter(os.path.join(params['pickle']['pickle_path'], 'tune2.xlsx'))
+    tuning_error_per_set.to_excel(writer, 'df')
+    writer.save()
+    return tuning_error_per_set, errors
 
 def _create_labels(labels, current_class):
     '''
@@ -341,9 +361,8 @@ def main():
     params = get_default_parameters()
     np.random.seed(0)  # seed
     train, test = set_and_split_data(params)
-    # params, errors = tuning(params, train)
-    # chosen_params = params[np.argmin(list(errors))]
-    # print(f'chosen {chosen_params}')
+    # tuning_error_per_set, errors = tuning(params, train)
+    #tuning_error_per_set, errors = tuning_blocks(params, train)
     train_data = prepare(params, train['data'], train['labels'])
     test_data = prepare(params, test['data'], test['labels'])
     model = train_model(train_data['data'], train_data['labels'], params)
